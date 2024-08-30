@@ -1,0 +1,465 @@
+import SP from "../domain/sp";
+import SPRepository from "../infrastructure/repository/spRepository";
+import EncryptPassword from "../infrastructure/services/bcryptPassword";
+import GenerateOtp from "../infrastructure/services/generateOtp";
+import JWTToken from "../infrastructure/services/generateToken";
+import sendOtp from "../infrastructure/services/sendEmail";
+
+class SPUseCase {
+  private SPRepository: SPRepository;
+  private EncryptPassword: EncryptPassword;
+  private JwtToken: JWTToken;
+  private generateOtp: GenerateOtp;
+  private generateEmail: sendOtp;
+  constructor(
+    SPRepository: SPRepository,
+    encryptPassword: EncryptPassword,
+    jwtToken: JWTToken,
+    generateOtp: GenerateOtp,
+    generateEmail: sendOtp
+  ) {
+    this.SPRepository = SPRepository;
+    this.EncryptPassword = encryptPassword;
+    this.JwtToken = jwtToken;
+    this.generateOtp = generateOtp;
+    this.generateEmail = generateEmail;
+  }
+
+  async checkExist(email: string) {
+    const userExist = await this.SPRepository.findByEmail(email);
+
+    if (userExist) {
+      return {
+        status: 400,
+        data: {
+          status: false,
+          message: "Already exists",
+        },
+      };
+    } else {
+      return {
+        status: 200,
+        data: {
+          status: true,
+          message: "does not exist",
+        },
+      };
+    }
+  }
+
+  async signup(
+    email: string,
+    name: string,
+    phone: string,
+    password: string,
+    area: string,
+    city: string,
+    latitude: number,
+    longitude: number,
+    state: string,
+    pincode: number,
+    district: string
+  ) {
+    const otp = this.generateOtp.createOtp();
+    const hashedPassword = await this.EncryptPassword.encryptPassword(password);
+    await this.SPRepository.saveOtp(
+      email,
+      otp,
+      name,
+      phone,
+      hashedPassword,
+      area,
+      city,
+      latitude,
+      longitude,
+      state,
+      pincode,
+      district
+    );
+    this.generateEmail.sendMail(email, otp);
+
+    return {
+      status: 200,
+      data: {
+        status: true,
+        message: "Verification otp sent to your email",
+      },
+    };
+  }
+
+  async verifyOtp(email: string, otp: number) {
+    console.log("verifyOtp from sp use case", email, otp);
+
+    const sEmail = String(email);
+    const otpRecord = await this.SPRepository.findOtpByEmail(sEmail);
+
+    let data: {
+      name: string;
+      email: string;
+      phone: string;
+      password: string;
+      area: string;
+      city: string;
+      latitude: number;
+      longitude: number;
+      state: string;
+      pincode: number;
+      district: string;
+    } = {
+      name: otpRecord.name,
+      email: otpRecord.email,
+      phone: otpRecord.phone,
+      password: otpRecord.password,
+      area: otpRecord.area,
+      city: otpRecord.city,
+      latitude: otpRecord.latitude,
+      longitude: otpRecord.longitude,
+      state: otpRecord.state,
+      pincode: otpRecord.pincode,
+      district: otpRecord.district,
+    };
+
+    const now = new Date().getTime();
+    const otpGeneratedAt = new Date(otpRecord.otpGeneratedAt).getTime();
+    const otpExpiration = 2 * 60 * 1000;
+
+    if (now - otpGeneratedAt > otpExpiration) {
+      await this.SPRepository.deleteOtpByEmail(email);
+      return { status: 400, message: "OTP has expired" };
+    }
+
+    if (otpRecord.otp !== otp) {
+      return { status: 400, message: "Invalid OTP" };
+    }
+
+    await this.SPRepository.deleteOtpByEmail(email);
+    console.log("OTP verified successfully", data);
+
+    return { status: 200, message: "OTP verified successfully", data: data };
+  }
+
+  async verifyOtpSP(sp: any) {
+    const newUser = { ...sp };
+
+    const spData = await this.SPRepository.save(newUser);
+    console.log(spData);
+
+    let data = {
+      _id: spData._id,
+      name: spData.name,
+      email: spData.email,
+      phone: spData.phone,
+      area: spData.area,
+      city: spData.city,
+      latitude: spData.latitude,
+      longitude: spData.longitude,
+      state: spData.state,
+      pincode: spData.pincode,
+      district: spData.district,
+      isVerified: spData.isVerified,
+      isBlocked: spData.isBlocked,
+    };
+
+    await this.SPRepository.deleteOtpByEmail(data.email);
+
+    const token = this.JwtToken.generateToken(spData._id, "sp");
+
+    return {
+      status: 200,
+      data: data,
+      message: "OTP verified successfully",
+      token,
+    };
+  }
+
+  async login(email: string, password: string) {
+    const spData = await this.SPRepository.findByEmail(email);
+    let token = "";
+
+    if (spData) {
+      let data = {
+        _id: spData._id,
+        name: spData.name,
+        email: spData.email,
+        phone: spData.phone,
+        area: spData.area,
+        city: spData.city,
+        latitude: spData.latitude,
+        longitude: spData.longitude,
+        state: spData.state,
+        pincode: spData.pincode,
+        district: spData.district,
+        isVerified: spData.isVerified,
+        isBlocked: spData.isBlocked,
+      };
+
+      const passwordMatch = await this.EncryptPassword.compare(
+        password,
+        spData.password
+      );
+      console.log(passwordMatch);
+
+      if (passwordMatch) {
+        token = this.JwtToken.generateToken(spData._id, "user");
+
+        return {
+          status: 200,
+          data: {
+            status: true,
+            message: data,
+            token,
+          },
+        };
+      } else {
+        return {
+          status: 400,
+          data: {
+            status: false,
+            message: "Invalid email or password",
+            token: "",
+          },
+        };
+      }
+    } else {
+      return {
+        status: 400,
+        data: {
+          status: false,
+          message: "Invalid email or password",
+          token: "",
+        },
+      };
+    }
+  }
+
+  async resendOtp(
+    email: string,
+    name: string,
+    phone: string,
+    password: string,
+    area: string,
+    city: string,
+    latitude: number,
+    longitude: number,
+    state: string,
+    pincode: number,
+    district: string
+  ) {
+    const otp = this.generateOtp.createOtp();
+    const hashedPassword = await this.EncryptPassword.encryptPassword(password);
+    await this.SPRepository.saveOtp(
+      email,
+      otp,
+      name,
+      phone,
+      hashedPassword,
+      area,
+      city,
+      latitude,
+      longitude,
+      state,
+      pincode,
+      district
+    );
+    this.generateEmail.sendMail(email, otp);
+
+    return { status: 200, message: "Otp has been sent to your email" };
+  }
+
+  async getProfile(Id: string) {
+    const profile = await this.SPRepository.findById(Id);
+
+    let data = {
+      _id: profile?._id,
+      name: profile?.name,
+      email: profile?.email,
+      phone: profile?.phone,
+      isBlocked: profile?.isBlocked,
+      area: profile?.area,
+      city: profile?.city,
+      state: profile?.state,
+      pincode: profile?.pincode,
+      district: profile?.district,
+      latitude: profile?.latitude,
+      longitude: profile?.longitude,
+      isVerified: profile?.isVerified,
+      closingTime: profile?.closingTime,
+      openingTime: profile?.openingTime,
+      profileImage: profile?.profileImage,
+      serviceType: profile?.serviceType,
+    };
+
+    return {
+      status: 200,
+      data: data,
+    };
+  }
+
+  async editProfile(
+    Id: string,
+    data: {
+      name: string;
+      email: string;
+      phone: string;
+      area: string;
+      city: string;
+      latitude: number;
+      longitude: number;
+      state: string;
+      pincode: number;
+      district: string;
+      serviceType: string;
+      closingTime: string;
+      openingTime: string;
+      profileImage: string;
+    }
+  ) {
+    const profile = await this.SPRepository.editProfile(Id, data);
+
+    if (profile) {
+      const data = await this.SPRepository.findById(Id);
+
+      const profileData = {
+        _id: data?._id,
+        name: data?.name,
+        email: data?.email,
+        phone: data?.phone,
+        isBlocked: data?.isBlocked,
+        area: data?.area,
+        city: data?.city,
+        state: data?.state,
+        pincode: data?.pincode,
+        district: data?.district,
+        latitude: data?.latitude,
+        longitude: data?.longitude,
+        isVerified: data?.isVerified,
+        serviceType: data?.serviceType,
+        closingTime: data?.closingTime,
+        openingTime: data?.openingTime,
+        profileImage: data?.profileImage,
+      };
+
+      return {
+        status: 200,
+        data: {
+          message: "Profile updated successfully",
+          user: profileData,
+        },
+      };
+    } else {
+      return {
+        status: 400,
+        message: "Failed to update the data Please try again",
+      };
+    }
+  }
+
+  async updatePassword(Id: string, newpassword: string, oldPassword: string) {
+    const currentPasswordHash = await this.SPRepository.findPasswordById(Id);
+    console.log("currentPasswordHash :", currentPasswordHash);
+
+    if (!currentPasswordHash) {
+      return {
+        status: 404,
+        message: "User not found",
+      };
+    }
+
+    const isPasswordValid = await this.EncryptPassword.comparePassword(
+      oldPassword,
+      currentPasswordHash
+    );
+    console.log("isPasswordValid :", isPasswordValid);
+
+    if (!isPasswordValid) {
+      return {
+        status: 400,
+        message: "Current password is incorrect",
+      };
+    }
+
+    const hashedPassword = await this.EncryptPassword.encryptPassword(
+      newpassword
+    );
+    console.log("hashedPassword :", hashedPassword);
+
+    const changePassword = await this.SPRepository.changePasswordById(
+      Id,
+      hashedPassword
+    );
+    console.log("changePassword :", changePassword);
+
+    if (changePassword) {
+      return {
+        status: 200,
+        message: "Password changed successfully",
+      };
+    } else {
+      return {
+        status: 400,
+        message: "Failed please try again !",
+      };
+    }
+  }
+
+  async updateImage(Id: string, imageUrl: string) {
+    const result = await this.SPRepository.changeProfileImage(Id, imageUrl);
+
+    if (result) {
+      return {
+        status: 200,
+        message: "Password changed successfully",
+      };
+    } else {
+      return {
+        status: 400,
+        message: "Failed please try again !",
+      };
+    }
+  }
+
+
+
+
+  async addDepartment(
+    spId: string,
+    departmentName: string,
+    doctors: {
+      name: string;
+      specialization: string;
+      availableFrom: string;
+      availableTo: string;
+      contact: string;
+    }[]
+  ) {
+    try {
+
+      console.log("came to usecase",spId,departmentName,doctors);
+
+      // Call the repository to perform the operation
+      const result = await this.SPRepository.addDepartment(
+        spId,
+        departmentName,
+        doctors
+      );
+
+      if (result) {
+        return {
+          status: 200,
+          message: "Department and doctors added successfully",
+        };
+      } else {
+        return {
+          status: 400,
+          message: "Failed to add department and doctors",
+        };
+      }
+    } catch (error) {
+      throw new Error(
+        "An error occurred while adding the department and doctors"
+      );
+    }
+  }
+}
+
+export default SPUseCase;
