@@ -76,7 +76,13 @@ const spSchema: Schema<any & Document> = new Schema({
   departments: [{ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Department' 
-  }]
+  }],
+  firstDocumentImage:{
+    type:String
+  },
+  secondDocumentImage:{
+    type:String
+  }
 });
 
 const SPModel: Model<SP & Document> = mongoose.model<SP & Document>(

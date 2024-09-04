@@ -1,9 +1,11 @@
+import { response } from "express";
 import SP from "../domain/sp";
 import SPRepository from "../infrastructure/repository/spRepository";
 import EncryptPassword from "../infrastructure/services/bcryptPassword";
 import GenerateOtp from "../infrastructure/services/generateOtp";
 import JWTToken from "../infrastructure/services/generateToken";
 import sendOtp from "../infrastructure/services/sendEmail";
+import { Error } from "mongoose";
 
 class SPUseCase {
   private SPRepository: SPRepository;
@@ -191,6 +193,8 @@ class SPUseCase {
         district: spData.district,
         isVerified: spData.isVerified,
         isBlocked: spData.isBlocked,
+        firstDocumentImage: spData.firstDocumentImage,
+        secondDocumentImage: spData.secondDocumentImage,
       };
 
       const passwordMatch = await this.EncryptPassword.compare(
@@ -287,6 +291,9 @@ class SPUseCase {
       openingTime: profile?.openingTime,
       profileImage: profile?.profileImage,
       serviceType: profile?.serviceType,
+      firstDocumentImage: profile?.firstDocumentImage,
+      secondDocumentImage: profile?.secondDocumentImage,
+      departments: profile?.departments,
     };
 
     return {
@@ -312,6 +319,8 @@ class SPUseCase {
       closingTime: string;
       openingTime: string;
       profileImage: string;
+      firstDocumentImage: string;
+      secondDocumentImage: string;
     }
   ) {
     const profile = await this.SPRepository.editProfile(Id, data);
@@ -337,6 +346,8 @@ class SPUseCase {
         closingTime: data?.closingTime,
         openingTime: data?.openingTime,
         profileImage: data?.profileImage,
+        firstDocumentImage: data?.firstDocumentImage,
+        secondDocumentImage: data?.secondDocumentImage,
       };
 
       return {
@@ -417,7 +428,36 @@ class SPUseCase {
       };
     }
   }
+  async changeFirstDocumentImage(Id: string, imageUrl: string) {
+    const result = await this.SPRepository.changeFirstDocumentImage(Id, imageUrl);
 
+    if (result) {
+      return {
+        status: 200,
+        message: "Password changed successfully",
+      };
+    } else {
+      return {
+        status: 400,
+        message: "Failed please try again !",
+      };
+    }
+  }
+  async changeSecondDocumentImage(Id: string, imageUrl: string) {
+    const result = await this.SPRepository.changeSecondDocumentImage(Id, imageUrl);
+
+    if (result) {
+      return {
+        status: 200,
+        message: "Password changed successfully",
+      };
+    } else {
+      return {
+        status: 400,
+        message: "Failed please try again !",
+      };
+    }
+  }
 
 
 
@@ -460,6 +500,49 @@ class SPUseCase {
       );
     }
   }
+
+
+  async getAllServiceDetails(spId: string) {
+    try {
+      console.log("UseCase: Fetching service details for SP ID:", spId);
+      const services = await this.SPRepository.getAllServiceDetails(spId);
+
+      if (services) {
+        return services;
+      } else {
+        throw new Error("Services not found");
+      }
+    } catch (error) {
+      throw new Error("An error occurred while fetching the services");
+    }
+  }
+
+  async editDepartment(spId: string ,departmentId: string, name: string, doctors: any[]) {
+    try {
+      console.log("UseCase: Editing department with ID:",spId, departmentId,name,doctors);
+
+      const updatedDepartment = await this.SPRepository.editDepartment(spId,departmentId, name, doctors);
+
+      if (updatedDepartment) {
+        return { status: 200, message: "Department updated successfully", data:updatedDepartment };
+      } else {
+        throw new Error("Department update failed");
+      }
+    } catch (error) {
+      throw new Error("An error occurred while updating the department");
+    }
+  }
+
+  async deleteDepartment(spId: string, departmentId: string) {
+    try {
+      const deleted = await this.SPRepository.deleteDepartment(spId, departmentId);
+      return deleted || { success: false, message: "Unknown error" };
+    } catch (error) {
+      console.log("Error in deleteDepartment use case:", error);
+      return { success: false, message: "An error occurred while deleting the department" };
+    }
+  }
+  
 }
 
 export default SPUseCase;

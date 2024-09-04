@@ -189,45 +189,130 @@ class userController {
       let { Id, password ,oldPassword} = req.body;
 
       let update = await this.userUseCase.updatePassword(Id, password,oldPassword);
-
-      if (update) {
-        return res.status(update.status).json(update.message);
-      }
+      console.log("update :",update)
+      return res.status(update.status).json(update.message);
     } catch (error) {
       next(error);
     }
   }
 
 
-  async getDepartments(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { page = 1, limit = 10 } = req.query;
-      const result = await this.userUseCase.getDepartments(Number(page), Number(limit));
-      return res.status(200).json(result);
-    } catch (error) {
-      next(error);
-    }
-  }
+//   async getDepartments(req: Request, res: Response, next: NextFunction) {
+//     try {
+//       const { page = 1, limit = 10 } = req.query;
+//       const result = await this.userUseCase.getDepartments(Number(page), Number(limit));
+//       return res.status(200).json(result);
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
 
-  async getDoctors(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { page = 1, limit = 10 } = req.query;
-      const result = await this.userUseCase.getDoctors(Number(page), Number(limit));
-      return res.status(200).json(result);
-    } catch (error) {
-      next(error);
-    }
-  }
+//   async getDoctors(req: Request, res: Response, next: NextFunction) {
+//     try {
+//       const { page = 1, limit = 10 } = req.query;
+//       const result = await this.userUseCase.getDoctors(Number(page), Number(limit));
+//       return res.status(200).json(result);
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
 
-  async getServiceProviders(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { page = 1, limit = 10 } = req.query;
-      const result = await this.userUseCase.getServiceProviders(Number(page), Number(limit));
-      return res.status(200).json(result);
-    } catch (error) {
-      next(error);
-    }
+//   async getHospitals(req: Request, res: Response, next: NextFunction) {
+//     try {
+//       const { page = 1, limit = 10 } = req.query;
+//       const result = await this.userUseCase.getHospitals(Number(page), Number(limit));
+//       return res.status(200).json(result);
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+//   async getClinicks(req: Request, res: Response, next: NextFunction) {
+//     try {
+//       const { page = 1, limit = 10 } = req.query;
+//       const result = await this.userUseCase.getClinicks(Number(page), Number(limit));
+//       return res.status(200).json(result);
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+//   async getAmbulances(req: Request, res: Response, next: NextFunction) {
+//     try {
+//       const { page = 1, limit = 10 } = req.query;
+//       const result = await this.userUseCase.getAmbulances(Number(page), Number(limit));
+//       return res.status(200).json(result);
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+//   async getHomeNurses(req: Request, res: Response, next: NextFunction) {
+//     try {
+//       const { page = 1, limit = 10 } = req.query;
+//       const result = await this.userUseCase.getHomeNurses(Number(page), Number(limit));
+//       return res.status(200).json(result);
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+
+async getDepartments(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page = 1, limit = 10, search = '' } = req.query;
+    const result = await this.userUseCase.getDepartments(Number(page), Number(limit), search as string);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
   }
+}
+
+async getDoctors(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page = 1, limit = 10, search = '' } = req.query;
+    const result = await this.userUseCase.getDoctors(Number(page), Number(limit), search as string);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async getHospitals(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page = 1, limit = 10, search = '' } = req.query;
+    const result = await this.userUseCase.getHospitals(Number(page), Number(limit), search as string);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async getClinicks(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page = 1, limit = 10, search = '' } = req.query;
+    const result = await this.userUseCase.getClinicks(Number(page), Number(limit), search as string);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async getAmbulances(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page = 1, limit = 10, search = '' } = req.query;
+    const result = await this.userUseCase.getAmbulances(Number(page), Number(limit), search as string);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async getHomeNurses(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page = 1, limit = 10, search = '' } = req.query;
+    const result = await this.userUseCase.getHomeNurses(Number(page), Number(limit), search as string);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
 
 }
 

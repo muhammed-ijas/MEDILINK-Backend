@@ -18,6 +18,8 @@ interface sp {
     serviceType:string;
     profileImage: string;
     departments: string[];
+    firstDocumentImage: string;
+    secondDocumentImage: string;
   }
  
   

@@ -188,6 +188,35 @@ class spController {
     }
   }
 
+  async changeFirstDocumentImage(req: Request, res: Response, next: NextFunction) {
+    try {
+      let { Id, imageUrl} = req.body;
+
+      let update = await this.spUseCase.changeFirstDocumentImage(Id, imageUrl);
+
+      if (update) {
+        return res.status(update.status).json(update.message);
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async changeSecondDocumentImage(req: Request, res: Response, next: NextFunction) {
+    try {
+      let { Id, imageUrl} = req.body;
+
+      let update = await this.spUseCase.changeSecondDocumentImage(Id, imageUrl);
+
+      if (update) {
+        return res.status(update.status).json(update.message);
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+  
+
 
   
   async addDepartment(req: Request, res: Response, next: NextFunction) {
@@ -205,6 +234,64 @@ class spController {
       next(error);
     }
   }
+
+  async getAllServiceDetails(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { spId } = req.params;
+      console.log("Fetching all service details for SP ID:", spId);
+
+      const services = await this.spUseCase.getAllServiceDetails(spId);
+      
+      if (services) {
+        return res.status(200).json(services);
+      } else {
+        return res.status(404).json({ message: "Services not found" });
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async editDepartment(req: Request, res: Response, next: NextFunction) {
+    try {
+      console.log("Came to editDepartment controller", req.body);
+
+      const spId = req.body.spId
+      const  departmentId = req.body.data.departmentId ;
+      const name = req.body.data.name ;
+      const doctors  = req.body.data.doctors ;
+
+      console.log("departmentId :",departmentId , "name :",name  , "doctors :",doctors )
+
+      const updateResult = await this.spUseCase.editDepartment(spId,departmentId, name, doctors);
+
+      console.log("response ffrom spusecase :",updateResult)
+
+      if (updateResult) {
+        return res.status(updateResult.status).json(updateResult);
+      } else {
+        return res.status(400).json({ message: "Update failed" });
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteDepartment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { spId, departmentId } = req.body;
+      const response = await this.spUseCase.deleteDepartment(spId, departmentId);
+  
+      if (response.success) {
+        return res.status(200).json({ message: response.message });
+      } else {
+        return res.status(400).json({ message: response.message });
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+  
 
 }
 

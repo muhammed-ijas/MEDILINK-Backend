@@ -36,6 +36,11 @@ route.post('/editProfile',(req,res,next)=>spController.updateProfile(req,res,nex
 route.post('/changePassword',(req,res,next)=>spController.updatePassword(req,res,next))
 route.post('/upload-profile-image',(req,res,next)=>spController.updateImage(req,res,next))
 route.post('/addDepartment',(req,res,next)=>spController.addDepartment(req,res,next))
+route.post('/changeFirstDocumentImage',(req,res,next)=>spController.changeFirstDocumentImage(req,res,next))
+route.post('/changeSecondDocumentImage',(req,res,next)=>spController.changeSecondDocumentImage(req,res,next))
+route.get('/getAllServiceDetails/:spId', (req, res, next) => spController.getAllServiceDetails(req, res, next));
+route.post('/editDepartment', (req, res, next) => spController.editDepartment(req, res, next));
+route.post('/deleteDepartment', (req, res, next) => spController.deleteDepartment(req, res, next));
 
 
 

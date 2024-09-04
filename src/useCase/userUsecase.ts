@@ -344,8 +344,14 @@ class UserUseCase {
   }
 
   async updatePassword(Id: string, newpassword: string, oldPassword: string) {
+
+
+    console.log("oldPassword :",oldPassword);
+    console.log("newpassword :",newpassword);
+
+    
     const currentPasswordHash = await this.UserRepository.findPasswordById(Id);
-    console.log("currentPasswordHash :", currentPasswordHash);
+    // console.log("currentPasswordHash :", currentPasswordHash);
 
     if (!currentPasswordHash) {
       return {
@@ -362,7 +368,7 @@ class UserUseCase {
 
     if (!isPasswordValid) {
       return {
-        status: 400,
+        status: 201,
         message: "Current password is incorrect",
       };
     }
@@ -392,12 +398,104 @@ class UserUseCase {
   }
 
 
-  async getDepartments(page: number, limit: number) {
-    try {
-      const departments = await this.DepartmentRepository.findPaginated(page, limit);
-      const totalDepartments = await this.DepartmentRepository.count();
-      const totalPages = Math.ceil(totalDepartments / limit);
+  // async getDepartments(page: number, limit: number) {
+  //   try {
+  //     const departments = await this.DepartmentRepository.findPaginated(page, limit);
+  //     const totalDepartments = await this.DepartmentRepository.count();
+  //     const totalPages = Math.ceil(totalDepartments / limit);
 
+  //     return {
+  //       items: departments,
+  //       totalPages
+  //     };
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
+
+  // async getDoctors(page: number, limit: number) {
+  //   try {
+  //     const doctors = await this.DoctorRepository.findPaginated(page, limit);
+  //     const totalDoctors = await this.DoctorRepository.count();
+  //     const totalPages = Math.ceil(totalDoctors / limit);
+
+  //     return {
+  //       items: doctors,
+  //       totalPages
+  //     };
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
+
+  // async getHospitals(page: number, limit: number) {
+  //   try {
+  //     const hospitals = await this.SPRepository.findPaginatedHospitals(page, limit);
+  //     const totalHospitals = await this.SPRepository.countHospitals();
+  //     const totalPages = Math.ceil(totalHospitals / limit);
+
+  //     return {
+  //       items: hospitals,
+  //       totalPages
+  //     };
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
+
+  // async getClinicks(page: number, limit: number) {
+  //   try {
+  //     const clinicks = await this.SPRepository.findPaginatedClinicks(page, limit);
+  //     const totalClinicks = await this.SPRepository.countClinicks();
+  //     const totalPages = Math.ceil(totalClinicks / limit);
+
+  //     return {
+  //       items: clinicks,
+  //       totalPages
+  //     };
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
+
+
+  // async getAmbulances(page: number, limit: number) {
+  //   try {
+  //     const ambulances = await this.SPRepository.findPaginatedAmbulances(page, limit);
+  //     const totalAmbulances = await this.SPRepository.countAmbulances();
+  //     const totalPages = Math.ceil(totalAmbulances / limit);
+
+  //     return {
+  //       items: ambulances,
+  //       totalPages
+  //     };
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
+
+
+  // async getHomeNurses(page: number, limit: number) {
+  //   try {
+  //     const homeNurses = await this.SPRepository.findPaginatedHomeNurses(page, limit);
+  //     const totalHomeNurses = await this.SPRepository.countHomeNurses();
+  //     const totalPages = Math.ceil(totalHomeNurses / limit);
+
+  //     return {
+  //       items: homeNurses,
+  //       totalPages
+  //     };
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
+
+  async getDepartments(page: number, limit: number, search: string) {
+    try {
+      const departments = await this.DepartmentRepository.findPaginated(page, limit, search);
+      const totalDepartments = await this.DepartmentRepository.count(search);
+      const totalPages = Math.ceil(totalDepartments / limit);
+  
       return {
         items: departments,
         totalPages
@@ -406,13 +504,13 @@ class UserUseCase {
       throw error;
     }
   }
-
-  async getDoctors(page: number, limit: number) {
+  
+  async getDoctors(page: number, limit: number, search: string) {
     try {
-      const doctors = await this.DoctorRepository.findPaginated(page, limit);
-      const totalDoctors = await this.DoctorRepository.count();
+      const doctors = await this.DoctorRepository.findPaginated(page, limit, search);
+      const totalDoctors = await this.DoctorRepository.count(search);
       const totalPages = Math.ceil(totalDoctors / limit);
-
+  
       return {
         items: doctors,
         totalPages
@@ -421,21 +519,67 @@ class UserUseCase {
       throw error;
     }
   }
-
-  async getServiceProviders(page: number, limit: number) {
+  
+  async getHospitals(page: number, limit: number, search: string) {
     try {
-      const providers = await this.SPRepository.findPaginated(page, limit);
-      const totalProviders = await this.SPRepository.count();
-      const totalPages = Math.ceil(totalProviders / limit);
-
+      const hospitals = await this.SPRepository.findPaginatedHospitals(page, limit, search);
+      const totalHospitals = await this.SPRepository.countHospitals(search);
+      const totalPages = Math.ceil(totalHospitals / limit);
+  
       return {
-        items: providers,
+        items: hospitals,
         totalPages
       };
     } catch (error) {
       throw error;
     }
   }
+  
+  async getClinicks(page: number, limit: number, search: string) {
+    try {
+      const clinicks = await this.SPRepository.findPaginatedClinicks(page, limit, search);
+      const totalClinicks = await this.SPRepository.countClinicks(search);
+      const totalPages = Math.ceil(totalClinicks / limit);
+  
+      return {
+        items: clinicks,
+        totalPages
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  async getAmbulances(page: number, limit: number, search: string) {
+    try {
+      const ambulances = await this.SPRepository.findPaginatedAmbulances(page, limit, search);
+      const totalAmbulances = await this.SPRepository.countAmbulances(search);
+      const totalPages = Math.ceil(totalAmbulances / limit);
+  
+      return {
+        items: ambulances,
+        totalPages
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  async getHomeNurses(page: number, limit: number, search: string) {
+    try {
+      const homeNurses = await this.SPRepository.findPaginatedHomeNurses(page, limit, search);
+      const totalHomeNurses = await this.SPRepository.countHomeNurses(search);
+      const totalPages = Math.ceil(totalHomeNurses / limit);
+  
+      return {
+        items: homeNurses,
+        totalPages
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+  
 }
 
 export default UserUseCase;

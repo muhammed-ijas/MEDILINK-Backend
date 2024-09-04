@@ -42,10 +42,18 @@ route.post('/verifyEmail',(req,res,next)=>userController.forgotPassword(req,res,
 route.post('/resendOtp',(req,res,next)=>userController.resentOtp(req,res,next))
 route.post('/getProfile',userAuth,(req,res,next)=>userController.getProfile(req,res,next))
 route.post('/editProfile',userAuth,(req,res,next)=>userController.updateProfile(req,res,next))
-route.post('/changePassword',(req,res,next)=>userController.updatePassword(req,res,next))
+route.post('/changePassword',userAuth,(req,res,next)=>userController.updatePassword(req,res,next))
+
+
 route.get('/getDepartments',userAuth,(req,res,next)=>userController.getDepartments(req,res,next))
 route.get('/getDoctors',userAuth,(req,res,next)=>userController.getDoctors(req,res,next))
-route.get('/getServiceProviders',userAuth,(req,res,next)=>userController.getServiceProviders(req,res,next))
+route.get('/getHospitals',userAuth,(req,res,next)=>userController.getHospitals(req,res,next))
+
+route.get('/getClinicks',userAuth,(req,res,next)=>userController.getClinicks(req,res,next))
+route.get('/getAmbulances',userAuth,(req,res,next)=>userController.getAmbulances(req,res,next))
+route.get('/getHomeNurses',userAuth,(req,res,next)=>userController.getHomeNurses(req,res,next))
+
+
 
 
 
