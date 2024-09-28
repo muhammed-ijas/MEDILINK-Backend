@@ -12,7 +12,7 @@ class adminController {
  
   async getUnVerifiedServices(req: Request, res: Response, next: NextFunction) {
     try {
-      console.log("Came in controller get unverified services section ");
+      // console.log("Came in controller get unverified services section ");
       const response = await this.AdminUseCase.getUnverifiedServices();
       console.log(response);
       return res.status(200).json(response); // Make sure to send the response back to the client
@@ -25,7 +25,7 @@ class adminController {
     try {
       // console.log("Came in controller get  services section ");
       const response = await this.AdminUseCase.getAllServices();
-      console.log(response);
+      // console.log(response);
       return res.status(200).json(response); // Make sure to send the response back to the client
     } catch (error) {
       next(error); // Handle errors appropriately
@@ -36,7 +36,18 @@ class adminController {
     try {
       // console.log("Came in controller get  services section ");
       const response = await this.AdminUseCase.getVerifiedServices();
-      console.log(response);
+      // console.log(response);
+      return res.status(200).json(response); // Make sure to send the response back to the client
+    } catch (error) {
+      next(error); // Handle errors appropriately
+    }
+  }
+
+  async getUsers(req: Request, res: Response, next: NextFunction) {
+    try {
+      // console.log("Came in controller getUsers section ");
+      const response = await this.AdminUseCase.getUsers();
+      // console.log(response);
       return res.status(200).json(response); // Make sure to send the response back to the client
     } catch (error) {
       next(error); // Handle errors appropriately
@@ -47,16 +58,36 @@ class adminController {
 
   async approvedService(req: Request, res: Response, next: NextFunction) {
     try {
-      console.log("came in controller admin approval request",req.body)
+      // console.log("came in controller admin approval request",req.body)
 
       const { id } = req.body;
       if (!id) {
         return res.status(400).json({ message: 'Service provider ID is required' });
       }
       const response = await this.AdminUseCase.approvedService(id);
-      console.log("response in controller :",response);
+      // console.log("response in controller :",response);
       
       return res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async blockUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { userId } = req.body;
+      await this.AdminUseCase.blockUser(userId);
+      res.status(200).json({ message: 'User blocked successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async unblockUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { userId } = req.body;
+      await this.AdminUseCase.unblockUser(userId);
+      res.status(200).json({ message: 'User unblocked successfully' });
     } catch (error) {
       next(error);
     }

@@ -4,6 +4,10 @@ import UserRepo from "../../useCase/interface/userRepo";
 import Otp from "../../domain/otp";
 import OtpModel from "../database/otpModel";
 
+import AppointmentModel from "../database/AppointmentModel";
+import DoctorModel from "../database/doctorsModel";
+import SPModel from "../database/spModel";
+
 class UserRepository implements UserRepo {
   //saving user details to database
   async save(user: User): Promise<User> {
@@ -46,7 +50,7 @@ class UserRepository implements UserRepo {
       const otpRecord = await OtpModel.findOne({ email })
         .sort({ otpGeneratedAt: -1 })
         .exec();
-      console.log("Fetched OTP record:", otpRecord);
+      // console.log("Fetched OTP record:", otpRecord);
       return otpRecord;
     } catch (error) {
       console.error("Error fetching OTP record:", error);
@@ -55,8 +59,8 @@ class UserRepository implements UserRepo {
   }
 
   async deleteOtpByEmail(email: string): Promise<any> {
-    console.log("deletee all otps");
-    
+    // console.log("deletee all otps");
+
     return OtpModel.deleteMany({ email });
   }
 
@@ -71,8 +75,11 @@ class UserRepository implements UserRepo {
     return result.modifiedCount > 0;
   }
 
-  async chnagePasswordById(Id:string, password:string): Promise<boolean> {
-    const result  = await UserModel.updateOne({_id:Id},{$set:{password:password}});
+  async chnagePasswordById(Id: string, password: string): Promise<boolean> {
+    const result = await UserModel.updateOne(
+      { _id: Id },
+      { $set: { password: password } }
+    );
     return result.modifiedCount > 0;
   }
 
@@ -87,16 +94,105 @@ class UserRepository implements UserRepo {
 
     return update.modifiedCount > 0;
   }
+
   async findPasswordById(Id: string): Promise<any> {
     try {
       const user = await UserModel.findOne({ _id: Id });
-      console.log("Fetched password :", user);
+      // console.log("Fetched password :", user);
       return user?.password;
     } catch (error) {
       console.error("Error fetching current password:", error);
       throw error;
     }
   }
+
+
+
+  async addReview(appointmentId: string, rating: number, review: string) {
+    try {
+      // Find the appointment and populate relevant fields
+      const appointment = await AppointmentModel.findById(appointmentId)
+        .populate("serviceProvider")
+        .populate("doctor")
+        .populate("user");
+  
+      // Check if the appointment exists and is completed
+      if (!appointment || appointment.bookingStatus !== "completed") {
+        throw new Error("Appointment must be completed to add a review.");
+      }
+  
+      const userId = appointment.user._id;
+  
+      // Create the new review object
+      const newReview = {
+        userId, 
+        rating,
+        review,
+        createdAt: new Date(),
+      };
+  
+      // Check if the service provider exists
+      if (appointment.serviceProvider) {
+        const existingReview = await SPModel.findOne({
+          _id: appointment.serviceProvider._id,
+          "ratings.userId": userId,  // Check if the user already has a review
+        });
+  
+        if (existingReview) {
+          // If the review exists, update it
+          await SPModel.updateOne(
+            { _id: appointment.serviceProvider._id, "ratings.userId": userId },
+            {
+              $set: {
+                "ratings.$.rating": rating,
+                "ratings.$.review": review,
+                "ratings.$.createdAt": new Date(),
+              },
+            }
+          );
+        } else {
+          // If no review exists, add a new one
+          await SPModel.findByIdAndUpdate(appointment.serviceProvider._id, {
+            $push: { ratings: newReview },
+          });
+        }
+      }
+  
+      // Repeat the same logic for doctors
+      if (appointment.doctor) {
+        const existingDoctorReview = await DoctorModel.findOne({
+          _id: appointment.doctor._id,
+          "ratings.userId": userId,  // Check if the user already has a review
+        });
+  
+        if (existingDoctorReview) {
+          // If the review exists, update it
+          await DoctorModel.updateOne(
+            { _id: appointment.doctor._id, "ratings.userId": userId },
+            {
+              $set: {
+                "ratings.$.rating": rating,
+                "ratings.$.review": review,
+                "ratings.$.createdAt": new Date(),
+              },
+            }
+          );
+        } else {
+          // If no review exists, add a new one
+          await DoctorModel.findByIdAndUpdate(appointment.doctor._id, {
+            $push: { ratings: newReview },
+          });
+        }
+      }
+  
+      return { message: "Review added or updated successfully!", review: newReview };
+    } catch (error) {
+      throw new Error(`Error adding review: ${error}`);
+    }
+  }
+
+  
+  
 }
 
 export default UserRepository;

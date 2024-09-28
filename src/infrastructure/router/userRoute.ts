@@ -12,6 +12,8 @@ import DepartmentRepository from '../repository/departmentRepository';
 import DoctorRepository from '../repository/doctorRepository';
 import SPRepository from '../repository/spRepository';
 
+const stripe = require("stripe")(process.env.STRIPE_SECRET)
+
 //services
 const generateOtp = new GenerateOtp(); 
 const sendOtp = new SendOtp();  // Ensure consistent naming
@@ -44,22 +46,42 @@ route.post('/getProfile',userAuth,(req,res,next)=>userController.getProfile(req,
 route.post('/editProfile',userAuth,(req,res,next)=>userController.updateProfile(req,res,next))
 route.post('/changePassword',userAuth,(req,res,next)=>userController.updatePassword(req,res,next))
 
-
+//for search page 
 route.get('/getDepartments',userAuth,(req,res,next)=>userController.getDepartments(req,res,next))
 route.get('/getDoctors',userAuth,(req,res,next)=>userController.getDoctors(req,res,next))
 route.get('/getHospitals',userAuth,(req,res,next)=>userController.getHospitals(req,res,next))
-
 route.get('/getClinicks',userAuth,(req,res,next)=>userController.getClinicks(req,res,next))
 route.get('/getAmbulances',userAuth,(req,res,next)=>userController.getAmbulances(req,res,next))
 route.get('/getHomeNurses',userAuth,(req,res,next)=>userController.getHomeNurses(req,res,next))
 
 
+route.get('/getHospitalClinicDetails/:id', userAuth, (req, res, next) => userController.getHospitalClinicDetails(req, res, next));
+route.get('/getDepartmentDetails/:id', userAuth, (req, res, next) => userController.getDepartmentDetails(req, res, next));
+
+route.get('/getDoctorDetails/:id', userAuth, (req, res, next) => userController.getDoctorDetails(req, res, next));
+route.get('/getDoctorDetailsFromSearchPage/:id', userAuth, (req, res, next) => userController.getDoctorDetailsFromSearchPage(req, res, next));
+
+
+
+route.get('/getHomeNurseDetails/:id', userAuth, (req, res, next) => userController.getHomeNurseDetails(req, res, next));
+route.get('/getAmbulanceDetails/:id', userAuth, (req, res, next) => userController.getAmbulanceDetails(req, res, next));
+
+
+route.post('/createPaymentSession', userAuth, (req, res, next) => {userController.createPaymentSession(req, res, next);});
+
+route.post('/updateBookingStatus', userAuth, (req, res,next) => { userController.updateBookingStatus(req, res ,next);});
+
+route.get('/getFullAppointmentList/:id', userAuth, (req, res,next) => { userController.getFullAppointmentList(req, res ,next);});
+
+route.put('/appointmentCancel/:id', (req, res, next) => userController.cancelAppointment(req, res, next));
+
+route.post('/addReview/:id', (req, res, next) => userController.addReview(req, res, next));
 
 
 
 
-// Remove duplicate route
-// route.post('/resendOtp', (req, res, next) => userController.resendOtp(req, res, next));
+
+
 
 route.use(errorHandle);
 

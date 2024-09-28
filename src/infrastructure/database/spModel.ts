@@ -1,6 +1,29 @@
 import mongoose, { Model, Schema, Document } from "mongoose";
 import SP from "../../domain/sp"; 
 
+
+const ratingSchema: Schema = new Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  rating: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 5,
+  },
+  review: {
+    type: String,
+    required: false,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
 const spSchema: Schema<any & Document> = new Schema({
   name: {
     type: String,
@@ -82,7 +105,8 @@ const spSchema: Schema<any & Document> = new Schema({
   },
   secondDocumentImage:{
     type:String
-  }
+  },
+  ratings: [ratingSchema], //for ratings 
 });
 
 const SPModel: Model<SP & Document> = mongoose.model<SP & Document>(

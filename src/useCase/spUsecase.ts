@@ -62,8 +62,27 @@ class SPUseCase {
     pincode: number,
     district: string
   ) {
+
+
+    console.log( email,
+      name,
+      phone,
+      password,
+      area,
+      city,
+      latitude,
+      longitude,
+      state,
+      pincode,
+      district ,  "from spusecase");
+    
     const otp = this.generateOtp.createOtp();
+    console.log("otp  :",otp);
+    
     const hashedPassword = await this.EncryptPassword.encryptPassword(password);
+
+    console.log("passsword hasehed  :",hashedPassword);
+    
     await this.SPRepository.saveOtp(
       email,
       otp,
@@ -78,6 +97,7 @@ class SPUseCase {
       pincode,
       district
     );
+    
     this.generateEmail.sendMail(email, otp);
 
     return {
@@ -429,7 +449,10 @@ class SPUseCase {
     }
   }
   async changeFirstDocumentImage(Id: string, imageUrl: string) {
-    const result = await this.SPRepository.changeFirstDocumentImage(Id, imageUrl);
+    const result = await this.SPRepository.changeFirstDocumentImage(
+      Id,
+      imageUrl
+    );
 
     if (result) {
       return {
@@ -444,7 +467,10 @@ class SPUseCase {
     }
   }
   async changeSecondDocumentImage(Id: string, imageUrl: string) {
-    const result = await this.SPRepository.changeSecondDocumentImage(Id, imageUrl);
+    const result = await this.SPRepository.changeSecondDocumentImage(
+      Id,
+      imageUrl
+    );
 
     if (result) {
       return {
@@ -459,8 +485,6 @@ class SPUseCase {
     }
   }
 
-
-
   async addDepartment(
     spId: string,
     departmentName: string,
@@ -470,17 +494,20 @@ class SPUseCase {
       availableFrom: string;
       availableTo: string;
       contact: string;
-    }[]
+      dateFrom: string;
+      dateEnd: string;
+    }[],
+    avgTime: string
   ) {
     try {
-
-      console.log("came to usecase",spId,departmentName,doctors);
+      console.log("came to usecase", spId, departmentName, doctors);
 
       // Call the repository to perform the operation
       const result = await this.SPRepository.addDepartment(
         spId,
         departmentName,
-        doctors
+        doctors,
+        avgTime
       );
 
       if (result) {
@@ -501,7 +528,6 @@ class SPUseCase {
     }
   }
 
-
   async getAllServiceDetails(spId: string) {
     try {
       console.log("UseCase: Fetching service details for SP ID:", spId);
@@ -517,14 +543,34 @@ class SPUseCase {
     }
   }
 
-  async editDepartment(spId: string ,departmentId: string, name: string, doctors: any[]) {
+  async editDepartment(
+    spId: string,
+    departmentId: string,
+    name: string,
+    doctors: any[]
+  ) {
     try {
-      console.log("UseCase: Editing department with ID:",spId, departmentId,name,doctors);
+      console.log(
+        "UseCase: Editing department with ID:",
+        spId,
+        departmentId,
+        name,
+        doctors
+      );
 
-      const updatedDepartment = await this.SPRepository.editDepartment(spId,departmentId, name, doctors);
+      const updatedDepartment = await this.SPRepository.editDepartment(
+        spId,
+        departmentId,
+        name,
+        doctors
+      );
 
       if (updatedDepartment) {
-        return { status: 200, message: "Department updated successfully", data:updatedDepartment };
+        return {
+          status: 200,
+          message: "Department updated successfully",
+          data: updatedDepartment,
+        };
       } else {
         throw new Error("Department update failed");
       }
@@ -535,14 +581,96 @@ class SPUseCase {
 
   async deleteDepartment(spId: string, departmentId: string) {
     try {
-      const deleted = await this.SPRepository.deleteDepartment(spId, departmentId);
+      const deleted = await this.SPRepository.deleteDepartment(
+        spId,
+        departmentId
+      );
       return deleted || { success: false, message: "Unknown error" };
     } catch (error) {
       console.log("Error in deleteDepartment use case:", error);
-      return { success: false, message: "An error occurred while deleting the department" };
+      return {
+        success: false,
+        message: "An error occurred while deleting the department",
+      };
     }
   }
-  
+
+  async getFullAppointmentList(spId: string) {
+    try {
+      const appointments = await this.SPRepository.findAppointmentsBySPId(spId);
+      return appointments;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+
+  async getRatingsAndReviews(spId: string) {
+    try {
+      // console.log("spId  from the usecase getRatingsAndReviews : ",spId);
+      const ratings = await this.SPRepository.findRatingsOfSPById(spId);
+      console.log("esponse from  repository : ",ratings);
+      return ratings;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+
+  async approveAppointment(id: string) {
+    const appointment = await this.SPRepository.approveAppointment(id);
+    if (!appointment)
+      throw new Error("Appointment not found or already approved");
+    console.log("Updated appointment:", appointment);
+    return appointment;
+  }
+
+
+
+  async completeAppointment(id: string) {
+    const appointment = await this.SPRepository.completeAppointment(id);
+    if (!appointment)
+      throw new Error("Appointment not found or already completed");
+    console.log("Updated appointment:", appointment);
+    return appointment;
+  }
+
+
+
+  async cancelAppointment(id: string, reason: string) {
+    console.log(" cancelAppointment usecase id ,reason   :", id, reason);
+
+    const appointment = await this.SPRepository.findAppointmentById(id);
+    console.log("appointment :",appointment);
+    
+    if (!appointment) {
+      throw new Error("Appointment not found");
+    }
+
+    if (appointment.bookingStatus === "cancelled") {
+      throw new Error("Already cancelled");
+    }
+
+    await this.SPRepository.updateAppointmentStatus(id, "cancelled");
+    // Update the time slot status to 'not occupied'
+  await this.SPRepository.updateTimeSlotStatus(
+    appointment.doctor,
+    appointment.bookingDate,
+    appointment.timeSlot,
+    "not occupied"
+  );
+
+    this.generateEmail.sendCancellation(appointment.patientEmail, reason);
+
+    return {
+      status: 200,
+      data: {
+        status: true,
+        message: "Appointment cancelled and notification sent to the patient",
+      },
+    };
+  }
+
 }
 
 export default SPUseCase;

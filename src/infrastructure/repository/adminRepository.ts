@@ -43,6 +43,13 @@ class adminRepository {
     return { services };
   }
 
+  async getUsers(): Promise<{ users: any[] }> {
+    const users = await UserModel.find({isAdmin:false})
+      .lean();
+    return { users };
+  }
+
+
 
   async approvedService(serviceProviderId: string): Promise<any> {
 
@@ -52,6 +59,18 @@ class adminRepository {
     );
     return result;
   }
+
+
+  
+  async getServiceProviderById(serviceProviderId: string): Promise<any> {
+    const service = await SPModel.findOne({_id:serviceProviderId})
+    return  service ;
+  }
+
+  async updateUserBlockStatus(userId: string, isBlocked: boolean) {
+    return UserModel.findByIdAndUpdate(userId, { isBlocked });
+  }
+  
 }
 
 export default adminRepository;

@@ -4,9 +4,9 @@ import EncryptPassword from "../infrastructure/services/bcryptPassword";
 import GenerateOtp from "../infrastructure/services/generateOtp";
 import JWTToken from "../infrastructure/services/generateToken";
 import sendOtp from "../infrastructure/services/sendEmail";
-import DepartmentRepository from '../infrastructure/repository/departmentRepository';
-import DoctorRepository from '../infrastructure/repository/doctorRepository';
-import SPRepository from '../infrastructure/repository/spRepository';
+import DepartmentRepository from "../infrastructure/repository/departmentRepository";
+import DoctorRepository from "../infrastructure/repository/doctorRepository";
+import SPRepository from "../infrastructure/repository/spRepository";
 
 class UserUseCase {
   private UserRepository: UserRepository;
@@ -26,7 +26,7 @@ class UserUseCase {
     generateEmail: sendOtp,
     DepartmentRepository: DepartmentRepository,
     DoctorRepository: DoctorRepository,
-    SPRepository: SPRepository,
+    SPRepository: SPRepository
   ) {
     this.UserRepository = UserRepository;
     this.EncryptPassword = encryptPassword;
@@ -75,7 +75,7 @@ class UserUseCase {
     };
   }
   async verifyOtp(email: string, otp: number) {
-    console.log("verifyOtp from use case", email, otp);
+    // console.log("verifyOtp from use case", email, otp);
 
     const sEmail = String(email);
     const otpRecord = await this.UserRepository.findOtpByEmail(sEmail);
@@ -102,7 +102,7 @@ class UserUseCase {
     }
 
     await this.UserRepository.deleteOtpByEmail(email);
-    console.log("OTP verified successfully", data);
+    // console.log("OTP verified successfully", data);
 
     return { status: 200, message: "OTP verified successfully", data: data };
   }
@@ -117,7 +117,7 @@ class UserUseCase {
 
       const userData = await this.UserRepository.save(newUser);
 
-      console.log(userData);
+      // console.log(userData);
 
       let data = {
         _id: userData._id,
@@ -125,7 +125,7 @@ class UserUseCase {
         email: userData.email,
         phone: userData.phone,
         isBlocked: userData.isBlocked,
-        isAdmin:userData.isAdmin,
+        isAdmin: userData.isAdmin,
       };
 
       const token = this.JwtToken.generateToken(userData._id, "user");
@@ -140,7 +140,7 @@ class UserUseCase {
     const newUser = { ...user };
 
     const userData = await this.UserRepository.save(newUser);
-    console.log(userData);
+    // console.log(userData);
 
     let data = {
       _id: userData._id,
@@ -148,7 +148,7 @@ class UserUseCase {
       email: userData.email,
       phone: userData.phone,
       isBlocked: userData.isBlocked,
-      isAdmin:userData.isAdmin,
+      isAdmin: userData.isAdmin,
     };
 
     await this.UserRepository.deleteOtpByEmail(data.email);
@@ -179,7 +179,7 @@ class UserUseCase {
 
       if (user.isBlocked) {
         return {
-          status: 400,
+          status: 403,
           data: {
             status: false,
             message: "You have been blocked by admin!",
@@ -192,7 +192,7 @@ class UserUseCase {
         password,
         user.password
       );
-      console.log(passwordMatch);
+      // console.log(passwordMatch);
 
       if (passwordMatch) {
         token = this.JwtToken.generateToken(user._id, "user");
@@ -344,12 +344,9 @@ class UserUseCase {
   }
 
   async updatePassword(Id: string, newpassword: string, oldPassword: string) {
+    // console.log("oldPassword :",oldPassword);
+    // console.log("newpassword :",newpassword);
 
-
-    console.log("oldPassword :",oldPassword);
-    console.log("newpassword :",newpassword);
-
-    
     const currentPasswordHash = await this.UserRepository.findPasswordById(Id);
     // console.log("currentPasswordHash :", currentPasswordHash);
 
@@ -364,7 +361,7 @@ class UserUseCase {
       oldPassword,
       currentPasswordHash
     );
-    console.log("isPasswordValid :", isPasswordValid);
+    // console.log("isPasswordValid :", isPasswordValid);
 
     if (!isPasswordValid) {
       return {
@@ -376,13 +373,13 @@ class UserUseCase {
     const hashedPassword = await this.EncryptPassword.encryptPassword(
       newpassword
     );
-    console.log("hashedPassword :", hashedPassword);
+    // console.log("hashedPassword :", hashedPassword);
 
     const changePassword = await this.UserRepository.chnagePasswordById(
       Id,
       hashedPassword
     );
-    console.log("changePassword :", changePassword);
+    // console.log("changePassword :", changePassword);
 
     if (changePassword) {
       return {
@@ -398,188 +395,296 @@ class UserUseCase {
   }
 
 
-  // async getDepartments(page: number, limit: number) {
-  //   try {
-  //     const departments = await this.DepartmentRepository.findPaginated(page, limit);
-  //     const totalDepartments = await this.DepartmentRepository.count();
-  //     const totalPages = Math.ceil(totalDepartments / limit);
-
-  //     return {
-  //       items: departments,
-  //       totalPages
-  //     };
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
-
-  // async getDoctors(page: number, limit: number) {
-  //   try {
-  //     const doctors = await this.DoctorRepository.findPaginated(page, limit);
-  //     const totalDoctors = await this.DoctorRepository.count();
-  //     const totalPages = Math.ceil(totalDoctors / limit);
-
-  //     return {
-  //       items: doctors,
-  //       totalPages
-  //     };
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
-
-  // async getHospitals(page: number, limit: number) {
-  //   try {
-  //     const hospitals = await this.SPRepository.findPaginatedHospitals(page, limit);
-  //     const totalHospitals = await this.SPRepository.countHospitals();
-  //     const totalPages = Math.ceil(totalHospitals / limit);
-
-  //     return {
-  //       items: hospitals,
-  //       totalPages
-  //     };
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
-
-  // async getClinicks(page: number, limit: number) {
-  //   try {
-  //     const clinicks = await this.SPRepository.findPaginatedClinicks(page, limit);
-  //     const totalClinicks = await this.SPRepository.countClinicks();
-  //     const totalPages = Math.ceil(totalClinicks / limit);
-
-  //     return {
-  //       items: clinicks,
-  //       totalPages
-  //     };
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
-
-
-  // async getAmbulances(page: number, limit: number) {
-  //   try {
-  //     const ambulances = await this.SPRepository.findPaginatedAmbulances(page, limit);
-  //     const totalAmbulances = await this.SPRepository.countAmbulances();
-  //     const totalPages = Math.ceil(totalAmbulances / limit);
-
-  //     return {
-  //       items: ambulances,
-  //       totalPages
-  //     };
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
-
-
-  // async getHomeNurses(page: number, limit: number) {
-  //   try {
-  //     const homeNurses = await this.SPRepository.findPaginatedHomeNurses(page, limit);
-  //     const totalHomeNurses = await this.SPRepository.countHomeNurses();
-  //     const totalPages = Math.ceil(totalHomeNurses / limit);
-
-  //     return {
-  //       items: homeNurses,
-  //       totalPages
-  //     };
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
-
   async getDepartments(page: number, limit: number, search: string) {
     try {
-      const departments = await this.DepartmentRepository.findPaginated(page, limit, search);
+      const departments = await this.DepartmentRepository.findPaginated(
+        page,
+        limit,
+        search
+      );
       const totalDepartments = await this.DepartmentRepository.count(search);
       const totalPages = Math.ceil(totalDepartments / limit);
-  
+
       return {
         items: departments,
-        totalPages
+        totalPages,
       };
     } catch (error) {
       throw error;
     }
   }
-  
+
   async getDoctors(page: number, limit: number, search: string) {
     try {
-      const doctors = await this.DoctorRepository.findPaginated(page, limit, search);
+      const doctors = await this.DoctorRepository.findPaginated(
+        page,
+        limit,
+        search
+      );
       const totalDoctors = await this.DoctorRepository.count(search);
       const totalPages = Math.ceil(totalDoctors / limit);
-  
+
       return {
         items: doctors,
-        totalPages
+        totalPages,
       };
     } catch (error) {
       throw error;
     }
   }
-  
+
   async getHospitals(page: number, limit: number, search: string) {
     try {
-      const hospitals = await this.SPRepository.findPaginatedHospitals(page, limit, search);
+      const hospitals = await this.SPRepository.findPaginatedHospitals(
+        page,
+        limit,
+        search
+      );
       const totalHospitals = await this.SPRepository.countHospitals(search);
       const totalPages = Math.ceil(totalHospitals / limit);
-  
+
+      // console.log(hospitals);
+      
       return {
         items: hospitals,
-        totalPages
+        totalPages,
       };
     } catch (error) {
       throw error;
     }
   }
-  
+
   async getClinicks(page: number, limit: number, search: string) {
     try {
-      const clinicks = await this.SPRepository.findPaginatedClinicks(page, limit, search);
+      const clinicks = await this.SPRepository.findPaginatedClinicks(
+        page,
+        limit,
+        search
+      );
       const totalClinicks = await this.SPRepository.countClinicks(search);
       const totalPages = Math.ceil(totalClinicks / limit);
-  
+
       return {
         items: clinicks,
-        totalPages
+        totalPages,
       };
     } catch (error) {
       throw error;
     }
   }
-  
+
   async getAmbulances(page: number, limit: number, search: string) {
     try {
-      const ambulances = await this.SPRepository.findPaginatedAmbulances(page, limit, search);
+      const ambulances = await this.SPRepository.findPaginatedAmbulances(
+        page,
+        limit,
+        search
+      );
       const totalAmbulances = await this.SPRepository.countAmbulances(search);
       const totalPages = Math.ceil(totalAmbulances / limit);
-  
+
       return {
         items: ambulances,
-        totalPages
+        totalPages,
       };
     } catch (error) {
       throw error;
     }
   }
-  
+
   async getHomeNurses(page: number, limit: number, search: string) {
     try {
-      const homeNurses = await this.SPRepository.findPaginatedHomeNurses(page, limit, search);
+      const homeNurses = await this.SPRepository.findPaginatedHomeNurses(
+        page,
+        limit,
+        search
+      );
       const totalHomeNurses = await this.SPRepository.countHomeNurses(search);
       const totalPages = Math.ceil(totalHomeNurses / limit);
-  
+
       return {
         items: homeNurses,
-        totalPages
+        totalPages,
       };
     } catch (error) {
       throw error;
     }
   }
+
+  async getHospitalClinicDetails(id: string) {
+    try {
+      const hospitalDetails = await this.SPRepository.findHospitalClinicById(
+        id
+      );
+
+      if (!hospitalDetails) {
+        throw new Error("Hospital/Clinic not found");
+      }
+
+      return hospitalDetails;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getDepartmentDetails(id: string) {
+    try {
+      const departmentDetails = await this.SPRepository.findDepartmentById(id);
+
+      if (!departmentDetails) {
+        throw new Error("Ddepartment not found");
+      }
+
+      return departmentDetails;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getDoctorDetails(id: string) {
+    try {
+      const doctorDetails = await this.DoctorRepository.findDoctorById(id);
+
+      if (!doctorDetails) {
+        throw new Error("Doctor not found");
+      }
+
+      return doctorDetails;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getDoctorDetailsFromSearchPage(id: string) {
+    try {
+      const doctorDetails =
+        await this.SPRepository.getDoctorDetailsFromSearchPage(id);
+
+      if (!doctorDetails) {
+        throw new Error("Doctor not found");
+      }
+
+      return doctorDetails;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getHomeNurseDetails(id: string) {
+    try {
+      const homeNurseDetails = await this.SPRepository.findHomeNurseById(id);
+
+      if (!homeNurseDetails) {
+        throw new Error("Ddepartment not found");
+      }
+
+      return homeNurseDetails;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getAmbulanceDetails(id: string) {
+    try {
+      const ambulanceDetails = await this.SPRepository.findAmbulanceById(id);
+
+      if (!ambulanceDetails) {
+        throw new Error("Ddepartment not found");
+      }
+
+      return ambulanceDetails;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getFullAppointmentList(userId: string) {
+    try {
+      const appointments = await this.SPRepository.findAppointmentsByUserId(
+        userId
+      );
+      return appointments;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async createPaymentSession(data: any) {
+    // console.log("came in usecase ", data);
+
+    return await this.SPRepository.createPaymentSession(data);
+  }
+
+  async updateBookingStatus(bookingId: string, status: string) {
+    try {
+      return await this.SPRepository.updateBookingStatus(bookingId, status);
+    } catch (error) {
+      throw new Error("Error updating booking status");
+    }
+  }
   
+  async findTheappointmentForqrcodeById(bookingId: string) {
+    try {
+      return await this.SPRepository.findAppointmentById(bookingId);
+    } catch (error) {
+      throw new Error("ot get");
+    }
+  }
+
+  
+
+
+  async cancelAppointment(id: string, reason: string) {
+    // console.log(" cancelAppointment usecase id ,reason   :", id, reason);
+
+    // Find the appointment by ID
+    const appointment = await this.SPRepository.findAppointmentById(id);
+    // console.log("appointment :", appointment);
+
+    if (!appointment) {
+      throw new Error("Appointment not found");
+    }
+
+    if (appointment.bookingStatus === "cancelled") {
+      throw new Error("Already cancelled");
+    }
+
+    // Update appointment status to 'cancelled'
+    await this.SPRepository.updateAppointmentStatus(id, "cancelled");
+
+    // Update the time slot status to 'not occupied'
+    await this.SPRepository.updateTimeSlotStatus(
+      appointment.doctor,
+      appointment.bookingDate,
+      appointment.timeSlot,
+      "not occupied"
+    );
+
+    // Send cancellation email
+    this.generateEmail.sendCancellation(appointment.patientEmail, reason);
+
+    return {
+      status: 200,
+      data: {
+        status: true,
+        message:
+          "Appointment cancelled, time slot released, and notification sent to the patient",
+      },
+    };
+  }
+
+  async addReview (appointmentId:string , rating:number , review:string){
+    try {
+
+      // console.log( "addReview usecase : " , appointmentId, rating , review );
+
+      return await this.UserRepository.addReview(appointmentId,rating,review);
+    } catch (error) {
+      throw new Error ('Error adding review');
+    }
+  }
+
+
 }
 
 export default UserUseCase;

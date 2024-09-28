@@ -8,6 +8,9 @@ const departmentSchema: Schema<any & Document> = new Schema({
   description: { 
     type: String 
   },
+  avgTime:{
+    type: String 
+  },
   serviceProvider: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'SP', 

@@ -41,6 +41,18 @@ class DoctorRepository {
       throw error;
     }
   }
+
+  async findDoctorById(id: string) {
+    try {
+      const result = await DoctorModel.findById({_id:id}).populate('department'); 
+  
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+
 }
 
 export default DoctorRepository;

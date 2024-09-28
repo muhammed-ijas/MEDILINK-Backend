@@ -125,11 +125,11 @@ class spController {
     try {
       
       let { Id } = req.body;
-      console.log("from get profile from spcontroller :", req.body);
+      // console.log("from get profile from spcontroller :", req.body);
       
 
       let profile = await this.spUseCase.getProfile(Id);
-      console.log("from get profile from spcontroller :", profile, "this is that");
+      // console.log("from get profile from spcontroller :", profile, "this is that");
       
 
       return res.status(profile.status).json(profile.data);
@@ -221,10 +221,10 @@ class spController {
   
   async addDepartment(req: Request, res: Response, next: NextFunction) {
     try {
-      console.log("came to controller",req.body);
+      // console.log("came to controller",req.body);
 
-      const { spId, department, doctors } = req.body;
-      const update = await this.spUseCase.addDepartment(spId, department, doctors);
+      const { spId, department, doctors,avgTime } = req.body;
+      const update = await this.spUseCase.addDepartment(spId, department, doctors,avgTime);
       if (update) {
         return res.status(update.status).json(update.message);
       } else {
@@ -238,7 +238,7 @@ class spController {
   async getAllServiceDetails(req: Request, res: Response, next: NextFunction) {
     try {
       const { spId } = req.params;
-      console.log("Fetching all service details for SP ID:", spId);
+      // console.log("Fetching all service details for SP ID:", spId);
 
       const services = await this.spUseCase.getAllServiceDetails(spId);
       
@@ -254,18 +254,18 @@ class spController {
 
   async editDepartment(req: Request, res: Response, next: NextFunction) {
     try {
-      console.log("Came to editDepartment controller", req.body);
+      // console.log("Came to editDepartment controller", req.body);
 
       const spId = req.body.spId
       const  departmentId = req.body.data.departmentId ;
       const name = req.body.data.name ;
       const doctors  = req.body.data.doctors ;
 
-      console.log("departmentId :",departmentId , "name :",name  , "doctors :",doctors )
+      // console.log("departmentId :",departmentId , "name :",name  , "doctors :",doctors )
 
       const updateResult = await this.spUseCase.editDepartment(spId,departmentId, name, doctors);
 
-      console.log("response ffrom spusecase :",updateResult)
+      // console.log("response ffrom spusecase :",updateResult)
 
       if (updateResult) {
         return res.status(updateResult.status).json(updateResult);
@@ -291,7 +291,74 @@ class spController {
       next(error);
     }
   }
+
+
   
+  async getFullAppointmentList(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      console.log("spId : ",id);
+      
+      const result = await this.spUseCase.getFullAppointmentList(id);
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+  
+  async getRatingsAndReviews(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      // console.log("spId  from the controller getRatingsAndReviews : ",id);
+      
+      const result = await this.spUseCase.getRatingsAndReviews(id);
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
+  async approveAppointment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      console.log(" approveAppointment controller id    :",id)
+      const result = await this.spUseCase.approveAppointment(id);
+      res.status(200).json({ message: 'Appointment approved successfully!', result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
+
+  async completeAppointment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      console.log(" completeAppointment controller id    :",id)
+      const result = await this.spUseCase.completeAppointment(id);
+      res.status(200).json({ message: 'Appointment completed successfully!', result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
+
+  async cancelAppointment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+      console.log(" cancelAppointment controller id ,reason   :",id,reason )
+
+      const result = await this.spUseCase.cancelAppointment(id, reason);
+      
+      res.status(200).json({ message: 'Appointment cancelled successfully!', result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
 
 }
 
