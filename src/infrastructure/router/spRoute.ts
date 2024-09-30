@@ -57,8 +57,11 @@ route.put('/appointmentApprove/:id', (req, res, next) => spController.approveApp
 route.put('/completeAppointment/:id', (req, res, next) => spController.completeAppointment(req, res, next));
 route.put('/appointmentCancel/:id', (req, res, next) => spController.cancelAppointment(req, res, next));
 
+//for emergency contacts
+route.get('/getEmergencyNumber/:id', (req, res, next) => spController.getEmergencyNumber(req, res, next));
 
-
+route.post('/updateEmergencyNumber', (req, res, next) => spController.updateEmergencyNumber(req, res, next));
+route.post('/deleteEmergencyNumber', (req, res, next) => spController.deleteEmergencyNumber(req, res, next));
 
 
 route.use(errorHandle);

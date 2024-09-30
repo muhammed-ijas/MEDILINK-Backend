@@ -7,7 +7,6 @@ class ChatRepository {
 
     async findProvidersByUserId(userId: string) {
         try {
-            // console.log(userId, "from repository findProvidersByUserId");
             
             // Fetch appointments for the user
             const appointments = await AppointmentModel.find({ user: userId })
@@ -28,9 +27,6 @@ class ChatRepository {
 
     async findUsersByProviderId(providerId: string) {
         try {
-
-            // console.log(providerId, "from repository findUsersByProviderId");
-
             // Fetch appointments for the provider
             const appointments = await AppointmentModel.find({ serviceProvider: providerId })
                 .populate('user'); // Populate the user field to get user details

@@ -7,6 +7,7 @@ import OtpModel from "../database/otpModel";
 import AppointmentModel from "../database/AppointmentModel";
 import DoctorModel from "../database/doctorsModel";
 import SPModel from "../database/spModel";
+import EmergencyModel from "../database/EmergencyModel";
 
 class UserRepository implements UserRepo {
   //saving user details to database
@@ -15,16 +16,19 @@ class UserRepository implements UserRepo {
     const savedUser = await newUser.save();
     return savedUser;
   }
+
   async findByEmail(email: string): Promise<User | null> {
     const userData = await UserModel.findOne({ email: email });
 
     return userData;
   }
+
   async findById(_id: string): Promise<User | null> {
     const userData = await UserModel.findById(_id);
 
     return userData;
   }
+
   async saveOtp(
     email: string,
     otp: number,
@@ -45,12 +49,12 @@ class UserRepository implements UserRepo {
 
     return savedDoc;
   }
+
   async findOtpByEmail(email: string): Promise<any> {
     try {
       const otpRecord = await OtpModel.findOne({ email })
         .sort({ otpGeneratedAt: -1 })
         .exec();
-      // console.log("Fetched OTP record:", otpRecord);
       return otpRecord;
     } catch (error) {
       console.error("Error fetching OTP record:", error);
@@ -59,8 +63,6 @@ class UserRepository implements UserRepo {
   }
 
   async deleteOtpByEmail(email: string): Promise<any> {
-    // console.log("deletee all otps");
-
     return OtpModel.deleteMany({ email });
   }
 
@@ -98,7 +100,6 @@ class UserRepository implements UserRepo {
   async findPasswordById(Id: string): Promise<any> {
     try {
       const user = await UserModel.findOne({ _id: Id });
-      // console.log("Fetched password :", user);
       return user?.password;
     } catch (error) {
       console.error("Error fetching current password:", error);
@@ -191,6 +192,19 @@ class UserRepository implements UserRepo {
     }
   }
 
+
+  
+  
+  async findAllEmergencyNumber() {
+    try {
+      const EmergencyNumbers = await EmergencyModel.find({})
+        .populate("serviceProvider", "name profileImage");
+      return EmergencyNumbers;
+
+    } catch (error) {
+      throw error;
+    }
+  }
   
   
 }

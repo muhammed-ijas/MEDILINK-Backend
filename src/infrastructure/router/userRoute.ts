@@ -78,6 +78,7 @@ route.put('/appointmentCancel/:id', (req, res, next) => userController.cancelApp
 route.post('/addReview/:id', (req, res, next) => userController.addReview(req, res, next));
 
 
+route.get('/getEmergencyNumbers', (req, res, next) => userController.getAllEmergencyNumbers(req, res, next));
 
 
 

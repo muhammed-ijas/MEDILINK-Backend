@@ -43,6 +43,7 @@ class adminRepository {
     return { services };
   }
 
+
   async getUsers(): Promise<{ users: any[] }> {
     const users = await UserModel.find({isAdmin:false})
       .lean();
@@ -50,9 +51,7 @@ class adminRepository {
   }
 
 
-
   async approvedService(serviceProviderId: string): Promise<any> {
-
     const result = await SPModel.updateOne(
       { _id: serviceProviderId },
       { $set: { isVerified: true } }
@@ -61,12 +60,12 @@ class adminRepository {
   }
 
 
-  
   async getServiceProviderById(serviceProviderId: string): Promise<any> {
     const service = await SPModel.findOne({_id:serviceProviderId})
     return  service ;
   }
 
+  
   async updateUserBlockStatus(userId: string, isBlocked: boolean) {
     return UserModel.findByIdAndUpdate(userId, { isBlocked });
   }

@@ -75,7 +75,6 @@ class UserUseCase {
     };
   }
   async verifyOtp(email: string, otp: number) {
-    // console.log("verifyOtp from use case", email, otp);
 
     const sEmail = String(email);
     const otpRecord = await this.UserRepository.findOtpByEmail(sEmail);
@@ -102,7 +101,6 @@ class UserUseCase {
     }
 
     await this.UserRepository.deleteOtpByEmail(email);
-    // console.log("OTP verified successfully", data);
 
     return { status: 200, message: "OTP verified successfully", data: data };
   }
@@ -117,7 +115,6 @@ class UserUseCase {
 
       const userData = await this.UserRepository.save(newUser);
 
-      // console.log(userData);
 
       let data = {
         _id: userData._id,
@@ -140,7 +137,6 @@ class UserUseCase {
     const newUser = { ...user };
 
     const userData = await this.UserRepository.save(newUser);
-    // console.log(userData);
 
     let data = {
       _id: userData._id,
@@ -192,7 +188,6 @@ class UserUseCase {
         password,
         user.password
       );
-      // console.log(passwordMatch);
 
       if (passwordMatch) {
         token = this.JwtToken.generateToken(user._id, "user");
@@ -344,11 +339,8 @@ class UserUseCase {
   }
 
   async updatePassword(Id: string, newpassword: string, oldPassword: string) {
-    // console.log("oldPassword :",oldPassword);
-    // console.log("newpassword :",newpassword);
 
     const currentPasswordHash = await this.UserRepository.findPasswordById(Id);
-    // console.log("currentPasswordHash :", currentPasswordHash);
 
     if (!currentPasswordHash) {
       return {
@@ -361,7 +353,6 @@ class UserUseCase {
       oldPassword,
       currentPasswordHash
     );
-    // console.log("isPasswordValid :", isPasswordValid);
 
     if (!isPasswordValid) {
       return {
@@ -373,13 +364,11 @@ class UserUseCase {
     const hashedPassword = await this.EncryptPassword.encryptPassword(
       newpassword
     );
-    // console.log("hashedPassword :", hashedPassword);
 
     const changePassword = await this.UserRepository.chnagePasswordById(
       Id,
       hashedPassword
     );
-    // console.log("changePassword :", changePassword);
 
     if (changePassword) {
       return {
@@ -442,8 +431,6 @@ class UserUseCase {
       );
       const totalHospitals = await this.SPRepository.countHospitals(search);
       const totalPages = Math.ceil(totalHospitals / limit);
-
-      // console.log(hospitals);
       
       return {
         items: hospitals,
@@ -610,8 +597,6 @@ class UserUseCase {
   }
 
   async createPaymentSession(data: any) {
-    // console.log("came in usecase ", data);
-
     return await this.SPRepository.createPaymentSession(data);
   }
 
@@ -635,11 +620,9 @@ class UserUseCase {
 
 
   async cancelAppointment(id: string, reason: string) {
-    // console.log(" cancelAppointment usecase id ,reason   :", id, reason);
 
     // Find the appointment by ID
     const appointment = await this.SPRepository.findAppointmentById(id);
-    // console.log("appointment :", appointment);
 
     if (!appointment) {
       throw new Error("Appointment not found");
@@ -675,15 +658,23 @@ class UserUseCase {
 
   async addReview (appointmentId:string , rating:number , review:string){
     try {
-
-      // console.log( "addReview usecase : " , appointmentId, rating , review );
-
       return await this.UserRepository.addReview(appointmentId,rating,review);
     } catch (error) {
       throw new Error ('Error adding review');
     }
   }
 
+  
+
+  
+  async getAllEmergencyNumbers() {
+    try {
+      const EmergencyNumbers = await this.UserRepository.findAllEmergencyNumber();
+      return EmergencyNumbers;
+    } catch (error) {
+      throw error;
+    }
+  }
 
 }
 

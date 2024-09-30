@@ -53,7 +53,6 @@ class userController {
         return res.status(verify.status).json({ message: verify.message });
       } else if (verify.status == 200) {
         let save = await this.userUseCase.verifyOtpUser(verify.data);
-
         if (save) {
           return res.status(save.status).json(save);
         }
@@ -66,10 +65,7 @@ class userController {
   async login(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, password } = req.body;
-      // console.log("login", email, password);
-
       const user = await this.userUseCase.login(email, password);
-      // console.log("user from controller after ogin  :",user)
       return res.status(user.status).json(user.data);
     } catch (error) {
       next(error);
@@ -125,6 +121,7 @@ class userController {
       next(error);
     }
   }
+
   async forgotPassword(req: Request, res: Response, next: NextFunction) {
     try {
       const { email } = req.body;
@@ -190,7 +187,7 @@ class userController {
         password,
         oldPassword
       );
-      // console.log("update :", update);
+
       return res.status(update.status).json(update.message);
     } catch (error) {
       next(error);
@@ -200,7 +197,8 @@ class userController {
 
   async getDepartments(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page = 1, limit = 10, search = "" } = req.query;
+      const { page = 1, limit = 10, search = "" } =req.query;
+
       const result = await this.userUseCase.getDepartments(
         Number(page),
         Number(limit),
@@ -288,7 +286,6 @@ class userController {
     next: NextFunction
   ) {
     try {
-      // console.log("came in userController :",req.params);
 
       const { id } = req.params;
       const result = await this.userUseCase.getHospitalClinicDetails(id);
@@ -300,7 +297,6 @@ class userController {
 
   async getDepartmentDetails(req: Request, res: Response, next: NextFunction) {
     try {
-      // console.log("came in userController :",req.params);
 
       const { id } = req.params;
       const result = await this.userUseCase.getDepartmentDetails(id);
@@ -312,7 +308,6 @@ class userController {
 
   async getDoctorDetails(req: Request, res: Response, next: NextFunction) {
     try {
-      // console.log("came in userController :",req.params);
 
       const { id } = req.params;
       const result = await this.userUseCase.getDoctorDetails(id);
@@ -328,7 +323,6 @@ class userController {
     next: NextFunction
   ) {
     try {
-      // console.log("came in userController :",req.params);
 
       const { id } = req.params;
       const result = await this.userUseCase.getDoctorDetailsFromSearchPage(id);
@@ -340,7 +334,6 @@ class userController {
 
   async getHomeNurseDetails(req: Request, res: Response, next: NextFunction) {
     try {
-      // console.log("came in userController :",req.params);
 
       const { id } = req.params;
       const result = await this.userUseCase.getHomeNurseDetails(id);
@@ -352,7 +345,6 @@ class userController {
 
   async getAmbulanceDetails(req: Request, res: Response, next: NextFunction) {
     try {
-      // console.log("came in userController :",req.params);
 
       const { id } = req.params;
       const result = await this.userUseCase.getAmbulanceDetails(id);
@@ -369,7 +361,6 @@ class userController {
   ) {
     try {
       const { id } = req.params;
-      // console.log("userId : ", id);
 
       const result = await this.userUseCase.getFullAppointmentList(id);
       return res.status(200).json(result);
@@ -381,10 +372,8 @@ class userController {
 
   async createPaymentSession(req: Request, res: Response, next: NextFunction) {
     try {
-      // console.log("came in contyroller ", req.body);
       const { body } = req;
       const session = await this.userUseCase.createPaymentSession(body);
-      // console.log("return  in controller ", session);
 
       return res.status(200).json({ id: session.id });
     } catch (error) {
@@ -409,7 +398,6 @@ class userController {
     try {
       const { id } = req.params;
       const { reason } = req.body;
-      // console.log(" cancelAppointment controller id ,reason   :", id, reason);
 
       const result = await this.userUseCase.cancelAppointment(id, reason);
 
@@ -424,7 +412,6 @@ class userController {
   async addReview (req:Request , res: Response , next: NextFunction) {
     try{
 
-      // console.log( "addReview controller : " , req.body,req.params);
       
       const {id} = req.params;
       const {rating , review } = req.body;
@@ -436,6 +423,17 @@ class userController {
     }
   }
 
+
+  async getAllEmergencyNumbers(req: Request, res: Response, next: NextFunction) {
+    try {
+      
+      const result = await this.userUseCase.getAllEmergencyNumbers();
+      return res.status(200).json(result);
+
+    } catch (error) {
+      next(error);
+    }
+  }
 
 }
 
