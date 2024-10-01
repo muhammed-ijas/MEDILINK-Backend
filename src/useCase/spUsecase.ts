@@ -209,6 +209,7 @@ class SPUseCase {
         isBlocked: spData.isBlocked,
         firstDocumentImage: spData.firstDocumentImage,
         secondDocumentImage: spData.secondDocumentImage,
+        serviceType: spData.serviceType,
       };
 
       const passwordMatch = await this.EncryptPassword.compare(
@@ -227,6 +228,7 @@ class SPUseCase {
             token,
           },
         };
+        
       } else {
         return {
           status: 400,
