@@ -187,8 +187,9 @@ class userController {
         password,
         oldPassword
       );
+      
 
-      return res.status(update.status).json(update.message);
+      return res.status(update.status).json(update);
     } catch (error) {
       next(error);
     }
