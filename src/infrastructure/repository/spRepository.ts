@@ -843,8 +843,8 @@ class SPRepository implements SPRepo {
           },
         ],
         mode: "payment",
-        success_url: `http://localhost:5173/user/success?bookingId=${appointment._id}`,
-        cancel_url: "http://localhost:5173/user/cancel",
+        success_url: `http://medilink.vercel.app/user/success?bookingId=${appointment._id}`,
+        cancel_url: "http://medilink.vercel.app/user/cancel",
       });
 
       return session;
