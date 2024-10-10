@@ -93,6 +93,7 @@ class sendOtp implements Nodemailer {
       }
     });
   }
+  
 
 
   sendApproval(email: string, name: string): void {

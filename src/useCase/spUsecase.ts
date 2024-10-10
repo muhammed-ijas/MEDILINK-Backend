@@ -7,6 +7,31 @@ import JWTToken from "../infrastructure/services/generateToken";
 import sendOtp from "../infrastructure/services/sendEmail";
 import { Error } from "mongoose";
 
+// Define the Medication and Prescription types
+export interface Medication {
+  medication: string;
+  dosage: string;
+  frequency: string;
+  route: string;
+  duration: string;
+  instructions?: string;
+  refills?: number;
+}
+
+export interface Prescription {
+  medications: Medication[];
+}
+
+interface DoctorData {
+  doctorId: string;
+  name: string;
+  specialization: string;
+  yearsOfExperience: string;
+  contact: string;
+  doctorProfileImage: string;
+  validCertificate: string;
+}
+
 class SPUseCase {
   private SPRepository: SPRepository;
   private EncryptPassword: EncryptPassword;
@@ -62,9 +87,8 @@ class SPUseCase {
     pincode: number,
     district: string
   ) {
-
-
-    console.log( email,
+    console.log(
+      email,
       name,
       phone,
       password,
@@ -74,12 +98,14 @@ class SPUseCase {
       longitude,
       state,
       pincode,
-      district ,  "from spusecase");
-    
+      district,
+      "from spusecase"
+    );
+
     const otp = this.generateOtp.createOtp();
-    
+
     const hashedPassword = await this.EncryptPassword.encryptPassword(password);
-    
+
     await this.SPRepository.saveOtp(
       email,
       otp,
@@ -94,7 +120,7 @@ class SPUseCase {
       pincode,
       district
     );
-    
+
     this.generateEmail.sendMail(email, otp);
 
     return {
@@ -107,7 +133,6 @@ class SPUseCase {
   }
 
   async verifyOtp(email: string, otp: number) {
-
     const sEmail = String(email);
     const otpRecord = await this.SPRepository.findOtpByEmail(sEmail);
 
@@ -228,7 +253,6 @@ class SPUseCase {
             token,
           },
         };
-        
       } else {
         return {
           status: 400,
@@ -424,7 +448,6 @@ class SPUseCase {
     }
   }
 
-
   async updateImage(Id: string, imageUrl: string) {
     const result = await this.SPRepository.changeProfileImage(Id, imageUrl);
 
@@ -440,7 +463,6 @@ class SPUseCase {
       };
     }
   }
-
 
   async changeFirstDocumentImage(Id: string, imageUrl: string) {
     const result = await this.SPRepository.changeFirstDocumentImage(
@@ -461,7 +483,6 @@ class SPUseCase {
     }
   }
 
-
   async changeSecondDocumentImage(Id: string, imageUrl: string) {
     const result = await this.SPRepository.changeSecondDocumentImage(
       Id,
@@ -481,10 +502,9 @@ class SPUseCase {
     }
   }
 
-
-  async addDepartment(
+  async addDoctorToDepartment(
     spId: string,
-    departmentName: string,
+    department: string,
     doctors: {
       name: string;
       specialization: string;
@@ -493,34 +513,58 @@ class SPUseCase {
       contact: string;
       dateFrom: string;
       dateEnd: string;
-    }[],
-    avgTime: string
+      doctorProfileImage: string;
+      yearsOfExperience: string;
+      validCertificate: string;
+    }[]
   ) {
     try {
+      console.log("from usecase ,", spId, department, doctors);
 
       // Call the repository to perform the operation
-      const result = await this.SPRepository.addDepartment(
+      const result = await this.SPRepository.addDoctorToDepartment(
         spId,
-        departmentName,
-        doctors,
-        avgTime
+        department,
+        doctors
       );
-
       if (result) {
         return {
           status: 200,
-          message: "Department and doctors added successfully",
+          message: "Doctors added successfully",
         };
       } else {
         return {
           status: 400,
-          message: "Failed to add department and doctors",
+          message: "Failed to add   doctors",
         };
       }
     } catch (error) {
-      throw new Error(
-        "An error occurred while adding the department and doctors"
+      throw new Error("An error occurred while adding the doctors");
+    }
+  }
+
+  async addDepartment(spId: string, departmentName: string, avgTime: string) {
+    try {
+      // Call the repository to perform the operation
+      const result = await this.SPRepository.addDepartment(
+        spId,
+        departmentName,
+        avgTime
       );
+
+      if (result.status) {
+        return {
+          status: 200,
+          message: result.message, // "Department added successfully"
+        };
+      } else {
+        return {
+          status: 201,
+          message: result.message,
+        };
+      }
+    } catch (error) {
+      throw new Error("An error occurred while adding the department");
     }
   }
 
@@ -538,7 +582,6 @@ class SPUseCase {
     }
   }
 
-
   async editDepartment(
     spId: string,
     departmentId: string,
@@ -546,7 +589,6 @@ class SPUseCase {
     doctors: any[]
   ) {
     try {
-
       const updatedDepartment = await this.SPRepository.editDepartment(
         spId,
         departmentId,
@@ -568,7 +610,6 @@ class SPUseCase {
     }
   }
 
-
   async deleteDepartment(spId: string, departmentId: string) {
     try {
       const deleted = await this.SPRepository.deleteDepartment(
@@ -585,7 +626,6 @@ class SPUseCase {
     }
   }
 
-
   async getFullAppointmentList(spId: string) {
     try {
       const appointments = await this.SPRepository.findAppointmentsBySPId(spId);
@@ -594,8 +634,6 @@ class SPUseCase {
       throw error;
     }
   }
-
-
 
   async getRatingsAndReviews(spId: string) {
     try {
@@ -606,15 +644,12 @@ class SPUseCase {
     }
   }
 
-
   async approveAppointment(id: string) {
     const appointment = await this.SPRepository.approveAppointment(id);
     if (!appointment)
       throw new Error("Appointment not found or already approved");
     return appointment;
   }
-
-
 
   async completeAppointment(id: string) {
     const appointment = await this.SPRepository.completeAppointment(id);
@@ -624,12 +659,9 @@ class SPUseCase {
     return appointment;
   }
 
-
-
   async cancelAppointment(id: string, reason: string) {
-
     const appointment = await this.SPRepository.findAppointmentById(id);
-    
+
     if (!appointment) {
       throw new Error("Appointment not found");
     }
@@ -640,12 +672,12 @@ class SPUseCase {
 
     await this.SPRepository.updateAppointmentStatus(id, "cancelled");
     // Update the time slot status to 'not occupied'
-  await this.SPRepository.updateTimeSlotStatus(
-    appointment.doctor,
-    appointment.bookingDate,
-    appointment.timeSlot,
-    "not occupied"
-  );
+    await this.SPRepository.updateTimeSlotStatus(
+      appointment.doctor,
+      appointment.bookingDate,
+      appointment.timeSlot,
+      "not occupied"
+    );
 
     this.generateEmail.sendCancellation(appointment.patientEmail, reason);
 
@@ -658,28 +690,29 @@ class SPUseCase {
     };
   }
 
-
-  
   async getEmergencyNumber(spId: string) {
     try {
-      const EmergencyNumbers = await this.SPRepository.findEmergencyNumber(spId);
+      const EmergencyNumbers = await this.SPRepository.findEmergencyNumber(
+        spId
+      );
       return EmergencyNumbers;
     } catch (error) {
       throw error;
     }
   }
 
-  
-  async updateEmergencyNumber(spId: string,emergencyNumber:string) {
+  async updateEmergencyNumber(spId: string, emergencyNumber: string) {
     try {
-      const EmergencyNumbers = await this.SPRepository.updateEmergencyNumber(spId,emergencyNumber);
+      const EmergencyNumbers = await this.SPRepository.updateEmergencyNumber(
+        spId,
+        emergencyNumber
+      );
       return EmergencyNumbers;
     } catch (error) {
       throw error;
     }
   }
 
-  
   async deleteEmergencyNumber(spId: string) {
     try {
       const result = await this.SPRepository.deleteEmergencyNumber(spId);
@@ -689,7 +722,105 @@ class SPUseCase {
     }
   }
 
+  async getDoctorDetails(doctorId: string) {
+    try {
+      const doctorDetails = await this.SPRepository.findDoctorById(doctorId);
+      return doctorDetails;
+    } catch (error) {
+      throw error;
+    }
+  }
 
+  async getAppointmentDetails(spId: string) {
+    try {
+      const appointments = await this.SPRepository.getAppointmentDetails(spId);
+      return appointments;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async addPrescriptionToAppointment(
+    appointmentId: string,
+    prescription: Prescription
+  ) {
+    try {
+      const result = await this.SPRepository.addPrescriptionToAppointment(
+        appointmentId,
+        prescription
+      );
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getPrescription(appointmentId: string) {
+    try {
+      const result = await this.SPRepository.getPrescription(appointmentId);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+ 
+
+  async getRecentAppointments(appointmentId: string) {
+    try {
+      const appointments =
+        await this.SPRepository.findAppointmentsAppointmentId(appointmentId);
+      return appointments;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateDoctorDetails(doctorData: DoctorData) {
+    try {
+      const result = await this.SPRepository.updateDoctorDetails(doctorData);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getAllDoctorDetailsInsideADepartment(departmentId: string) {
+    try {
+      const result = await this.SPRepository.getAllDoctorDetailsInsideADepartment(departmentId);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getDoctorSlotsDetails(doctorId: string) {
+    try {
+      const result = await this.SPRepository.getDoctorSlotsDetails(doctorId);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async isDoctorHaveSlots(doctorId: string) {
+    try {
+      const result = await this.SPRepository.isDoctorHaveSlots(doctorId);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+
+  // usecases/spUseCase.ts or similar file
+async deleteDoctor(doctorId: string) {
+  try {
+    // You might want to add additional checks here if necessary
+    await this.SPRepository.deleteDoctor(doctorId); // Call repository method to delete doctor
+  } catch (error) {
+    throw error; // Re-throw the error for handling in the controller
+  }
+}
 
 }
 

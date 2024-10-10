@@ -1,5 +1,17 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+
+// Define the medication schema
+const medicationSchema: Schema = new Schema({
+  medication: { type: String, required: true },
+  dosage: { type: String, required: true },
+  frequency: { type: String, required: true },
+  route: { type: String, required: true },
+  duration: { type: String, required: true },
+  instructions: { type: String, required: true },
+  refills: { type: Number, default: 0 }, // Default to 0 if not specified
+});
+
 // Define the appointment schema
 const appointmentSchema: Schema<any & Document> = new Schema({
   user: { 
@@ -17,7 +29,7 @@ const appointmentSchema: Schema<any & Document> = new Schema({
     ref: 'Department', 
     required: true 
   }, // Reference to the department
-  doctor: { 
+  doctor: {   
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Doctor', 
     required: true 
@@ -61,12 +73,13 @@ const appointmentSchema: Schema<any & Document> = new Schema({
   },
   bookingStatus: {
     type: String,
-    enum: ['pending', 'Approved', 'rejected','completed'],
+    enum: ['pending', 'Approved', 'rejected','completed','cancelled'],
     default: 'pending',
   },
   qrCode: {
     type: String, 
   },
+  prescription: [medicationSchema], 
 
 });
 

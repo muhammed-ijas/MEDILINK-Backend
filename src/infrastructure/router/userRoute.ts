@@ -63,9 +63,9 @@ route.get('/getDoctorDetailsFromSearchPage/:id', userAuth, (req, res, next) => u
 
 
 
+
 route.get('/getHomeNurseDetails/:id', userAuth, (req, res, next) => userController.getHomeNurseDetails(req, res, next));
 route.get('/getAmbulanceDetails/:id', userAuth, (req, res, next) => userController.getAmbulanceDetails(req, res, next));
-
 
 route.post('/createPaymentSession', userAuth, (req, res, next) => {userController.createPaymentSession(req, res, next);});
 
@@ -76,7 +76,6 @@ route.get('/getFullAppointmentList/:id', userAuth, (req, res,next) => { userCont
 route.put('/appointmentCancel/:id', (req, res, next) => userController.cancelAppointment(req, res, next));
 
 route.post('/addReview/:id', (req, res, next) => userController.addReview(req, res, next));
-
 
 route.get('/getEmergencyNumbers', (req, res, next) => userController.getAllEmergencyNumbers(req, res, next));
 

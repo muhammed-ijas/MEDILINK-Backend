@@ -42,6 +42,9 @@ route.post('/changeSecondDocumentImage',(req,res,next)=>spController.changeSecon
 
 
 route.post('/addDepartment',(req,res,next)=>spController.addDepartment(req,res,next))
+
+route.post('/addDoctorToDepartment',(req,res,next)=>spController.addDoctorToDepartment(req,res,next))
+
 route.post('/editDepartment', (req, res, next) => spController.editDepartment(req, res, next));
 route.post('/deleteDepartment', (req, res, next) => spController.deleteDepartment(req, res, next));
 
@@ -49,6 +52,12 @@ route.post('/deleteDepartment', (req, res, next) => spController.deleteDepartmen
 route.get('/getAllServiceDetails/:spId', (req, res, next) => spController.getAllServiceDetails(req, res, next));
 
 route.get('/getFullAppointmentList/:id', (req, res,next) => { spController.getFullAppointmentList(req, res ,next);});
+
+// Route to get doctor details
+route.get('/getDoctorDetails/:id', (req, res, next) => {spController.getDoctorDetails(req, res, next);});
+route.post('/updateDoctorDetails', (req, res, next) => {spController.updateDoctorDetails(req, res, next);});
+  // Route to get all appointments for a specific doctor
+route.get('/getAppointmentDetails/:id', (req, res, next) => {spController.getAppointmentDetails(req, res, next);});
 
 //ratings 
 route.get('/getRatingsAndReviews/:id', (req, res,next) => { spController.getRatingsAndReviews(req, res ,next);});
@@ -62,6 +71,23 @@ route.get('/getEmergencyNumber/:id', (req, res, next) => spController.getEmergen
 
 route.post('/updateEmergencyNumber', (req, res, next) => spController.updateEmergencyNumber(req, res, next));
 route.post('/deleteEmergencyNumber', (req, res, next) => spController.deleteEmergencyNumber(req, res, next));
+
+route.post('/addPrescriptionToAppointment', (req, res, next) => spController.addPrescriptionToAppointment(req, res, next));
+
+route.post('/getPrescription', (req, res, next) => spController.getPrescription(req, res, next));
+
+route.post('/getAllDoctorDetailsInsideADepartment', (req, res, next) => spController.getAllDoctorDetailsInsideADepartment(req, res, next));
+
+route.get('/getRecentAppointments/:appointmentId', (req, res,next) => { spController.getRecentAppointments(req, res ,next);});
+
+//to get doctor slot details on deletedoctormodal 
+route.post('/getDoctorSlotsDetails', (req, res, next) => spController.getDoctorSlotsDetails(req, res, next));
+
+route.post('/isDoctorHaveSlots', (req, res, next) => spController.isDoctorHaveSlots(req, res, next));
+
+route.delete('/deleteDoctor', (req, res, next) => spController.deleteDoctor(req, res, next));
+
+
 
 
 route.use(errorHandle);

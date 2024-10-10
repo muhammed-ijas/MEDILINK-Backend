@@ -210,11 +210,17 @@ class spController {
   }
   
 
-  async addDepartment(req: Request, res: Response, next: NextFunction) {
+  async addDoctorToDepartment(req: Request, res: Response, next: NextFunction) {
     try {
 
-      const { spId, department, doctors,avgTime } = req.body;
-      const update = await this.spUseCase.addDepartment(spId, department, doctors,avgTime);
+      console.log("came in controller addDoctorToDepartment",req.body);
+      
+      const { spId, department, doctors } = req.body;
+
+      console.log(doctors);
+      
+      const update = await this.spUseCase.addDoctorToDepartment(spId, department, doctors);
+
       if (update) {
         return res.status(update.status).json(update.message);
       } else {
@@ -224,6 +230,23 @@ class spController {
       next(error);
     }
   }
+  
+  async addDepartment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { spId, department, avgTime } = req.body;
+  
+      const update = await this.spUseCase.addDepartment(spId, department, avgTime);
+  
+      if (update) {
+        return res.status(update.status).json({ message: update.message });
+      } else {
+        return res.status(400).json({ message: "Update failed" });
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+  
 
   async getAllServiceDetails(req: Request, res: Response, next: NextFunction) {
     try {
@@ -332,9 +355,7 @@ class spController {
     try {
       const { id } = req.params;
       const { reason } = req.body;
-
       const result = await this.spUseCase.cancelAppointment(id, reason);
-      
       res.status(200).json({ message: 'Appointment cancelled successfully!', result });
     } catch (error) {
       next(error);
@@ -344,14 +365,8 @@ class spController {
   async getEmergencyNumber(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      console.log("came on getemergeny controller :",id)
-
-
       const result = await this.spUseCase.getEmergencyNumber(id);
-      console.log(result);
-      
       return res.status(200).json(result);
-
     } catch (error) {
       next(error);
     }
@@ -381,7 +396,128 @@ class spController {
     }
   }
 
+  async getDoctorDetails(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const doctorDetails = await this.spUseCase.getDoctorDetails(id);
+      return res.status(200).json(doctorDetails);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAppointmentDetails(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const result = await this.spUseCase.getAppointmentDetails(id);
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
+  async addPrescriptionToAppointment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { appointmentId ,prescription} = req.body;
+      const result = await this.spUseCase.addPrescriptionToAppointment(appointmentId,prescription);
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
+
+
+  async getPrescription(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { appointmentId } = req.body;
+      const result = await this.spUseCase.getPrescription(appointmentId);
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
+
+
   
+  
+  async getRecentAppointments(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { appointmentId } = req.params;      
+      const result = await this.spUseCase.getRecentAppointments(appointmentId);
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
+  
+  async updateDoctorDetails(req: Request, res: Response, next: NextFunction) {
+    try {
+      const doctorData = req.body;
+      const result = await this.spUseCase.updateDoctorDetails(doctorData);
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
+  
+  async getAllDoctorDetailsInsideADepartment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { departmentId } = req.body;
+      const result = await this.spUseCase.getAllDoctorDetailsInsideADepartment(departmentId);
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+  
+  async getDoctorSlotsDetails(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { doctorId } = req.body;
+      const result = await this.spUseCase.getDoctorSlotsDetails(doctorId);
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+  
+  async isDoctorHaveSlots(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { doctorId } = req.body;
+      const result = await this.spUseCase.isDoctorHaveSlots(doctorId);      
+      return res.status(200).json({result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
+
+  // controllers/spController.ts or similar file
+async deleteDoctor(req: Request, res: Response, next: NextFunction) {
+  try {
+
+    console.log((req.body));
+    
+    const { doctorId } = req.body;
+    console.log(doctorId);
+    
+    await this.spUseCase.deleteDoctor(doctorId); // Call the use case to delete the doctor
+    return res.status(204).send(); // Send a No Content status on success
+  } catch (error) {
+    next(error); // Pass error to the error handler
+  }
+}
+
+
 }
 
 export default spController;

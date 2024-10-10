@@ -8,6 +8,7 @@ import DoctorModel from "../database/doctorsModel";
 import mongoose, { Model, Schema, Document } from "mongoose";
 import moment from "moment";
 import QRCode from "qrcode";
+import sendOtp from "../services/sendEmail";
 
 import AppointmentModel from "../database/AppointmentModel";
 
@@ -18,7 +19,6 @@ import EmergencyModel from "../database/EmergencyModel";
 const stripe = new Stripe(process.env.STRIPE_SECRET!, {
   apiVersion: "2024-06-20",
 });
-
 
 interface TimeSlot {
   slot: string;
@@ -41,6 +41,33 @@ interface Doctor {
   dateFrom: Date; // New fields for date range
   dateEnd: Date; // New fields for date range
   availableDates: AvailableDate[]; // Array of available dates, each containing time slots
+  doctorProfileImage: string;
+  validCertificate: string ;
+}
+
+interface DoctorData {
+  doctorId: string;
+  name: string;
+  specialization: string;
+  yearsOfExperience: string;
+  contact: string;
+  doctorProfileImage: string;
+  validCertificate: string;
+}
+
+// Define the Medication and Prescription types
+export interface Medication {
+  medication: string;
+  dosage: string;
+  frequency: string;
+  route: string;
+  duration: string;
+  instructions?: string;
+  refills?: number;
+}
+
+export interface Prescription {
+  medications: Medication[];
 }
 
 class SPRepository implements SPRepo {
@@ -51,18 +78,15 @@ class SPRepository implements SPRepo {
     return savedSP;
   }
 
-
   async findByEmail(email: string): Promise<SP | null> {
     const spData = await SPModel.findOne({ email: email });
     return spData;
   }
 
-
   async findById(_id: string): Promise<SP | null> {
     const spData = await SPModel.findById(_id);
     return spData;
   }
-
 
   async saveOtp(
     email: string,
@@ -99,7 +123,6 @@ class SPRepository implements SPRepo {
     return savedDoc;
   }
 
-
   async findOtpByEmail(email: string): Promise<any> {
     try {
       const otpRecord = await SPOtpModel.findOne({ email })
@@ -112,11 +135,9 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async deleteOtpByEmail(email: string): Promise<any> {
     return SPOtpModel.deleteOne({ email });
   }
-
 
   async editProfile(
     Id: string,
@@ -165,7 +186,6 @@ class SPRepository implements SPRepo {
     return update.modifiedCount > 0;
   }
 
-
   async findPasswordById(Id: string): Promise<any> {
     try {
       const sp = await SPModel.findOne({ _id: Id });
@@ -176,7 +196,6 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async changePasswordById(Id: string, password: string): Promise<boolean> {
     const result = await SPModel.updateOne(
       { _id: Id },
@@ -185,7 +204,6 @@ class SPRepository implements SPRepo {
     return result.modifiedCount > 0;
   }
 
-
   async changeProfileImage(Id: string, imageUrl: string): Promise<boolean> {
     const result = await SPModel.updateOne(
       { _id: Id },
@@ -193,7 +211,6 @@ class SPRepository implements SPRepo {
     );
     return result.modifiedCount > 0;
   }
-
 
   async changeFirstDocumentImage(
     Id: string,
@@ -206,7 +223,6 @@ class SPRepository implements SPRepo {
     return result.modifiedCount > 0;
   }
 
-
   async changeSecondDocumentImage(
     Id: string,
     imageUrl: string
@@ -218,10 +234,9 @@ class SPRepository implements SPRepo {
     return result.modifiedCount > 0;
   }
 
-
-  async addDepartment(
+  async addDoctorToDepartment(
     spId: string,
-    departmentName: string,
+    departmentId: string,
     doctors: {
       name: string;
       specialization: string;
@@ -230,15 +245,21 @@ class SPRepository implements SPRepo {
       contact: string;
       dateFrom: string;
       dateEnd: string;
+      doctorProfileImage: string ;
+      yearsOfExperience:string ; 
+      validCertificate:string ;
     }[],
-    avgTime: string
   ): Promise<boolean> {
     try {
       // Check if the department already exists for the given service provider
       const existingDepartment = await DepartmentModel.findOne({
-        name: departmentName,
+        _id: departmentId,
         serviceProvider: spId,
       });
+
+      
+
+      const avgTime = existingDepartment.avgTime;
 
       // Function to generate time slots for a single day
       function generateTimeSlots(
@@ -250,7 +271,7 @@ class SPRepository implements SPRepo {
         const end = moment(to, "HH:mm");
 
         while (current < end) {
-          const next = moment(current).add(avgTime, "minutes");
+          const next = moment(current).add(existingDepartment.avgTime, "minutes");
           if (next > end) break;
 
           slots.push({
@@ -319,7 +340,7 @@ class SPRepository implements SPRepo {
       } else {
         // Create a new department
         const department = new DepartmentModel({
-          name: departmentName,
+          _id: departmentId,
           serviceProvider: spId,
         });
 
@@ -350,6 +371,45 @@ class SPRepository implements SPRepo {
   }
 
 
+  async addDepartment(
+    spId: string,
+    departmentName: string,
+    avgTime: string
+  ): Promise<{ status: boolean; message: string }> {
+    try {
+      // Check if the department already exists for the given service provider
+      const existingDepartment = await DepartmentModel.findOne({
+        name: departmentName,
+        serviceProvider: spId,
+      });
+
+      if (existingDepartment) {
+        return { status: false, message: "Department already added" }; // Return a clear message
+      } else {
+        // Create a new department
+        const department = new DepartmentModel({
+          name: departmentName,
+          serviceProvider: spId,
+        });
+        department.avgTime = avgTime;
+
+        await department.save();
+
+        // Update the service provider with the new department
+        await SPModel.findByIdAndUpdate(
+          spId,
+          { $push: { departments: department._id } },
+          { new: true }
+        );
+
+        return { status: true, message: "Department added successfully" }; // Successful addition
+      }
+    } catch (error) {
+      console.error("Error in addDepartment:", error);
+      throw new Error("Failed to add department");
+    }
+  }
+
   async findPaginatedHospitals(page: number, limit: number, search: string) {
     try {
       return await SPModel.find({
@@ -364,7 +424,6 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async countHospitals(search: string) {
     try {
       return await SPModel.countDocuments({
@@ -376,7 +435,6 @@ class SPRepository implements SPRepo {
       throw error;
     }
   }
-
 
   async findPaginatedClinicks(page: number, limit: number, search: string) {
     try {
@@ -392,7 +450,6 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async countClinicks(search: string) {
     try {
       return await SPModel.countDocuments({
@@ -404,7 +461,6 @@ class SPRepository implements SPRepo {
       throw error;
     }
   }
-
 
   async findPaginatedAmbulances(page: number, limit: number, search: string) {
     try {
@@ -420,7 +476,6 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async countAmbulances(search: string) {
     try {
       return await SPModel.countDocuments({
@@ -432,7 +487,6 @@ class SPRepository implements SPRepo {
       throw error;
     }
   }
-
 
   async findPaginatedHomeNurses(page: number, limit: number, search: string) {
     try {
@@ -448,7 +502,6 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async countHomeNurses(search: string) {
     try {
       return await SPModel.countDocuments({
@@ -460,7 +513,6 @@ class SPRepository implements SPRepo {
       throw error;
     }
   }
-
 
   async getAllServiceDetails(spId: string) {
     try {
@@ -475,7 +527,6 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async editDepartment(
     spId: string,
     departmentId: string,
@@ -483,7 +534,6 @@ class SPRepository implements SPRepo {
     doctors: Doctor[] // Use the defined interface here
   ) {
     try {
-
       // Update the department details
       const updatedDepartment = await DepartmentModel.findByIdAndUpdate(
         departmentId,
@@ -647,7 +697,6 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async deleteDepartment(spId: string, departmentId: string) {
     try {
       const department = await DepartmentModel.findOne({
@@ -692,7 +741,6 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async findHospitalClinicById(id: string) {
     try {
       const result = await SPModel.findById({ _id: id }).populate(
@@ -704,7 +752,6 @@ class SPRepository implements SPRepo {
       throw error;
     }
   }
-
 
   async findDepartmentById(id: string) {
     try {
@@ -719,7 +766,6 @@ class SPRepository implements SPRepo {
       throw error;
     }
   }
-
 
   async getDoctorDetailsFromSearchPage(id: string) {
     try {
@@ -738,7 +784,6 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async findHomeNurseById(id: string) {
     try {
       const result = await SPModel.findById({ _id: id });
@@ -748,7 +793,6 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async findAmbulanceById(id: string) {
     try {
       const result = await SPModel.findById({ _id: id });
@@ -757,7 +801,6 @@ class SPRepository implements SPRepo {
       throw error;
     }
   }
-
 
   async findAppointmentsByUserId(userId: string) {
     try {
@@ -774,9 +817,7 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async createPaymentSession(data: any) {
-
     // Validate required fields
     if (
       !data.userInfo ||
@@ -808,7 +849,6 @@ class SPRepository implements SPRepo {
         department.serviceProvider
       ).exec();
       if (!serviceProvider) throw new Error("Service Provider not found");
-
 
       const appointment = new AppointmentModel({
         user: data.userInfo._id,
@@ -843,8 +883,8 @@ class SPRepository implements SPRepo {
           },
         ],
         mode: "payment",
-        success_url: `http://medilink.vercel.app/user/success?bookingId=${appointment._id}`,
-        cancel_url: "http://medilink.vercel.app/user/cancel",
+        success_url: `http://localhost:5173/user/success?bookingId=${appointment._id}`,
+        cancel_url: "http://localhost:5173/user/cancel",
       });
 
       return session;
@@ -854,7 +894,6 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async updateBookingStatus(bookingId: string, status: string) {
     try {
       const booking = await AppointmentModel.findById(bookingId).exec();
@@ -862,7 +901,6 @@ class SPRepository implements SPRepo {
 
       booking.paymentStatus = status;
 
-      
       const serviceProvider = await SPModel.findById(
         booking.serviceProvider
       ).exec();
@@ -930,7 +968,6 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async findAppointmentsBySPId(spId: string) {
     try {
       const appointments = await AppointmentModel.find({
@@ -948,7 +985,6 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async approveAppointment(id: string) {
     return await AppointmentModel.findByIdAndUpdate(
       id,
@@ -956,7 +992,6 @@ class SPRepository implements SPRepo {
       { new: true }
     );
   }
-
 
   async completeAppointment(id: string) {
     return await AppointmentModel.findByIdAndUpdate(
@@ -966,11 +1001,9 @@ class SPRepository implements SPRepo {
     );
   }
 
-
   async findAppointmentById(id: string) {
     return await AppointmentModel.findById(id);
   }
-
 
   async saveAppointment(appointment: any) {
     return await appointment.save(); // This will update the existing appointment
@@ -1023,7 +1056,6 @@ class SPRepository implements SPRepo {
     }
   }
 
-
   async findRatingsOfSPById(spId: string) {
     try {
       // Aggregate pipeline to get ratings along with doctor and user details
@@ -1040,8 +1072,8 @@ class SPRepository implements SPRepo {
             from: "departments",
             localField: "departments",
             foreignField: "_id",
-            as: "departmentDetails"
-          }
+            as: "departmentDetails",
+          },
         },
 
         // Unwind the departmentDetails array
@@ -1056,8 +1088,8 @@ class SPRepository implements SPRepo {
             from: "doctors",
             localField: "departmentDetails.doctors",
             foreignField: "_id",
-            as: "doctorDetails"
-          }
+            as: "doctorDetails",
+          },
         },
 
         // Unwind the doctorDetails array
@@ -1072,8 +1104,8 @@ class SPRepository implements SPRepo {
             from: "users",
             localField: "doctorDetails.ratings.userId",
             foreignField: "_id",
-            as: "userDetails"
-          }
+            as: "userDetails",
+          },
         },
 
         // Unwind the userDetails array
@@ -1087,9 +1119,9 @@ class SPRepository implements SPRepo {
             patientName: "$userDetails.name",
             rating: "$doctorDetails.ratings.rating",
             review: "$doctorDetails.ratings.review",
-            createdAt: "$doctorDetails.ratings.createdAt"
-          }
-        }
+            createdAt: "$doctorDetails.ratings.createdAt",
+          },
+        },
       ]);
 
       return result;
@@ -1098,24 +1130,23 @@ class SPRepository implements SPRepo {
     }
   }
 
-
-  
-  async findEmergencyNumber(spId:string) {
+  async findEmergencyNumber(spId: string) {
     try {
-      const EmergencyNumbers = await EmergencyModel.find({serviceProvider:spId})
-        .populate("serviceProvider", "name profileImage");
+      const EmergencyNumbers = await EmergencyModel.find({
+        serviceProvider: spId,
+      }).populate("serviceProvider", "name profileImage");
       return EmergencyNumbers;
-
     } catch (error) {
       throw error;
     }
   }
 
-
   async updateEmergencyNumber(spId: string, emergencyNumber: string) {
     try {
-      const existingEmergencyNumber = await EmergencyModel.findOne({ serviceProvider: spId });
-  
+      const existingEmergencyNumber = await EmergencyModel.findOne({
+        serviceProvider: spId,
+      });
+
       if (existingEmergencyNumber) {
         existingEmergencyNumber.emergencyNumber = emergencyNumber;
         await existingEmergencyNumber.save();
@@ -1127,26 +1158,296 @@ class SPRepository implements SPRepo {
         });
         return newEmergencyNumber;
       }
-  
     } catch (error) {
       throw error;
     }
   }
-  
- async deleteEmergencyNumber(spId: string) {
-  try {
-    const deletedEmergencyNumber = await EmergencyModel.findOneAndDelete({ serviceProvider: spId });
 
-    if (!deletedEmergencyNumber) {
-      throw new Error("Emergency number not found for the specified service provider.");
+  async deleteEmergencyNumber(spId: string) {
+    try {
+      const deletedEmergencyNumber = await EmergencyModel.findOneAndDelete({
+        serviceProvider: spId,
+      });
+
+      if (!deletedEmergencyNumber) {
+        throw new Error(
+          "Emergency number not found for the specified service provider."
+        );
+      }
+
+      return deletedEmergencyNumber;
+    } catch (error) {
+      throw error;
     }
-
-    return deletedEmergencyNumber; 
-
-  } catch (error) {
-    throw error;
   }
-}
+
+  async findDoctorById(doctorId: string) {
+    try {
+      const doctor = await DoctorModel.findById(doctorId);
+      return doctor;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getAppointmentDetails(spId: string) {
+    try {
+      const appointments = await AppointmentModel.find({ doctor: spId })
+        .populate("serviceProvider", "name profileImage")
+        .populate("doctor", "name")
+        .populate("department", "name")
+        .sort({ createdAt: -1 })
+        .exec();
+      return appointments;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async addPrescriptionToAppointment(appointmentId: string, prescription: Prescription) {
+    try {
+      
+      const appointment = await AppointmentModel.findById(appointmentId);
+      if (!appointment) {
+        throw new Error('Appointment not found');
+      }
+        if (appointment.prescription && appointment.prescription.length > 0) {
+        appointment.prescription = prescription.medications; // Replace the old prescription with the new one
+      } else {
+        appointment.prescription = prescription.medications;
+      }
+      
+      await appointment.save();
+      
+      return appointment; 
+    } catch (error) {
+      console.error('Error in addPrescriptionToAppointment:', error);
+      throw error; 
+    }
+  }
+  
+  
+  async getPrescription(appointmentId: string) {
+    try {
+      
+      const appointment = await AppointmentModel.findById(appointmentId);
+      if (!appointment) {
+        throw new Error('Appointment not found');
+      }
+      return appointment.prescription; 
+    } catch (error) {
+      console.error('Error in addPrescriptionToAppointment:', error);
+      throw error; 
+    }
+  }
+  
+
+
+  async findAppointmentsAppointmentId(appointmentId: string) {
+    try {
+      const appointments = await AppointmentModel.find({ _id: appointmentId });
+        if (appointments.length === 0) {
+        throw new Error("Appointment not found");
+      }
+      const appointment = appointments[0];
+      const userId = appointment.user._id;
+      const recentAppointments = await AppointmentModel.find({ user: userId })
+      .populate("serviceProvider", "name profileImage")
+      .populate("doctor", "name")
+      .populate("department", "name")
+      .sort({ createdAt: -1 })
+      .exec();
+
+      console.log(recentAppointments);
+    
+      return recentAppointments;
+    } catch (error) {
+      throw error; 
+    }
+  }
+
+ 
+  
+
+
+  async updateDoctorDetails(doctorData: DoctorData) {
+    try {
+      const {
+        doctorId, 
+        name, 
+        specialization, 
+        yearsOfExperience, 
+        contact, 
+        doctorProfileImage, 
+        validCertificate
+      } = doctorData;
+  
+      // Find doctor by ID and update the details
+      const updatedDoctor = await DoctorModel.findByIdAndUpdate(
+        doctorId, // Filter by doctor ID
+        {         // Fields to update
+          name,
+          specialization,
+          yearsOfExperience,
+          contact,
+          doctorProfileImage,
+          validCertificate
+        },
+        { new: true, useFindAndModify: false } // Return the updated document
+      );
+  
+      if (!updatedDoctor) {
+        throw new Error('Doctor not found');
+      }
+        return updatedDoctor;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+
+
+
+  
+  async getAllDoctorDetailsInsideADepartment(departmentId: string) {
+    try {
+      
+      const department = await DepartmentModel.findById(departmentId)
+      .populate('doctors');
+      if (!department) {
+        throw new Error('Department not found');
+      }
+      return department.doctors; 
+    } catch (error) {
+      console.error('Error in addPrescriptionToAppointment:', error);
+      throw error; 
+    }
+  }
+
+
+  async getDoctorSlotsDetails(doctorId: string) {
+    try {
+      
+      const doctor = await DoctorModel.findById(doctorId)
+        .populate({
+          path: 'availableDates.timeSlots.user',
+          model: 'User', 
+          select: 'name email', 
+        })
+        .exec();
+
+        console.log("doctor slots ",doctor);
+        
+      
+      return doctor?.availableDates || []; 
+    } catch (error) {
+      console.error('Error in getDoctorSlotsDetails:', error);
+      throw error;
+    }
+  }
+
+  async isDoctorHaveSlots(doctorId: string) {
+    try {
+      const doctor = await DoctorModel.findById(doctorId)
+        .populate({
+          path: 'availableDates.timeSlots.user',
+          model: 'User',
+          select: 'name email',
+        })
+        .exec();
+  
+  
+      // Check if doctor has future available dates
+      if (doctor && doctor.availableDates) {
+        const currentDate = new Date();
+  
+        // Check for any future dates
+        const hasFutureDates = doctor.availableDates.some((date: AvailableDate) => {
+          return new Date(date.date) > currentDate; // Check if any date is in the future
+        });
+  
+        return hasFutureDates; // Return true if there are future dates, otherwise false
+      }
+  
+      return false; // Return false if no doctor found or no available dates
+    } catch (error) {
+      console.error('Error in isDoctorHaveSlots:', error);
+      throw error;
+    }
+  }
+
+  async deleteDoctor(doctorId: string) {
+    try {
+      // find the doctor
+      const doctor = await DoctorModel.findById(doctorId);
+      if (!doctor) {
+        throw new Error("Doctor not found");
+      }
+
+      console.log("step 1 completed ",doctor);
+      
+  
+      //remove the doctor from  department model
+      const resss = await DepartmentModel.findByIdAndUpdate(
+        doctor.department,
+        { $pull: { doctors: doctorId } },
+        { new: true }
+      );
+
+      console.log("step 2 completed ",resss);
+
+  
+      // Step 3: Check the doctor's time slots and cancel appointments if necessary
+      const currentDate = new Date();
+      const canceledAppointments: string[] = []; // Explicitly define the type as string[]
+  
+      // Loop through each available date to check the time slots
+      for (const availableDate of doctor.availableDates) {
+        for (const timeSlot of availableDate.timeSlots) {
+          // If the time slot is occupied
+          if (timeSlot.status === 'occupied' && timeSlot.user) {
+            // Step 4: Cancel the appointments for this user
+            const appointments = await AppointmentModel.updateMany(
+              {
+                user: timeSlot.user,
+                doctor: doctorId,
+                bookingDate: { $gte: currentDate }, // Only update future appointments
+                bookingStatus: { $ne: 'cancelled' } // Exclude already cancelled appointments
+              },
+              { $set: { bookingStatus: 'cancelled' } } // Update status to cancelled
+            );
+  
+            // Collect user email for notifications
+            if (appointments.modifiedCount > 0) {
+              const userEmail = timeSlot.user.email; // Ensure timeSlot.user has an email property
+              canceledAppointments.push(userEmail); // No need to cast to string
+            }
+          }
+        }
+      }
+
+      console.log("step 4 completed ",canceledAppointments);
+
+  
+      // Step 5: Delete the doctor
+      await DoctorModel.findByIdAndDelete(doctorId); // Finally, delete the doctor
+  
+      // Step 6: Send cancellation emails
+      const emailService = new sendOtp(); // Create an instance of your email service
+
+      canceledAppointments.forEach(email => {
+        emailService.sendCancellation(email, 'The doctor you had an appointment with has been deleted.');
+      });
+  
+      return { message: "Doctor deleted successfully and cancellation emails sent." }; 
+
+    } catch (error) {
+      console.error('Error in deleteDoctor:', error);
+      throw error;
+    }
+  }
+  
+  
 
 }
 

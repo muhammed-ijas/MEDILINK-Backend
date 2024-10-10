@@ -104,6 +104,18 @@ const doctorSchema: Schema<any & Document> = new Schema({
   },
   availableDates: [availableDateSchema], // Array of available dates with time slots
   ratings: [ratingSchema], // Add the ratings array here
+  doctorProfileImage:{
+    type:String,
+    required:true,
+  },
+  yearsOfExperience:{
+    type:String,
+    required:true,
+  },
+  validCertificate:{
+    type:String,
+    required:true,
+  },
 });
 
 // Create the Doctor model
