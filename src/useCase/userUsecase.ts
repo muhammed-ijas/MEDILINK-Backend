@@ -7,6 +7,7 @@ import sendOtp from "../infrastructure/services/sendEmail";
 import DepartmentRepository from "../infrastructure/repository/departmentRepository";
 import DoctorRepository from "../infrastructure/repository/doctorRepository";
 import SPRepository from "../infrastructure/repository/spRepository";
+import { String } from "aws-sdk/clients/cloudsearch";
 
 class UserUseCase {
   private UserRepository: UserRepository;
@@ -600,6 +601,10 @@ class UserUseCase {
     return await this.SPRepository.createPaymentSession(data);
   }
 
+  async confirmWalletPayment(data: any) {
+    return await this.SPRepository.confirmWalletPayment(data);
+  }
+
   async updateBookingStatus(bookingId: string, status: string) {
     try {
       return await this.SPRepository.updateBookingStatus(bookingId, status);
@@ -671,6 +676,25 @@ class UserUseCase {
     try {
       const EmergencyNumbers = await this.UserRepository.findAllEmergencyNumber();
       return EmergencyNumbers;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  
+  async getWalletDetails(userId:String) {
+    try {
+      const WalletDetails = await this.UserRepository.getWalletDetails(userId);
+      return WalletDetails;
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  async isWalletHaveMoney(userId:String) {
+    try {
+      const WalletDetails = await this.UserRepository.isWalletHaveMoney(userId);
+      return WalletDetails;
     } catch (error) {
       throw error;
     }

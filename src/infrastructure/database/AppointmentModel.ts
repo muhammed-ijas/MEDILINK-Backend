@@ -1,7 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 
-// Define the medication schema
 const medicationSchema: Schema = new Schema({
   medication: { type: String, required: true },
   dosage: { type: String, required: true },
@@ -9,7 +8,7 @@ const medicationSchema: Schema = new Schema({
   route: { type: String, required: true },
   duration: { type: String, required: true },
   instructions: { type: String, required: true },
-  refills: { type: Number, default: 0 }, // Default to 0 if not specified
+  refills: { type: Number, default: 0 }, 
 });
 
 // Define the appointment schema
@@ -18,22 +17,22 @@ const appointmentSchema: Schema<any & Document> = new Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 
     required: true 
-  }, // Reference to the user making the appointment
+  },
   serviceProvider: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'SP', 
     required: true 
-  }, // Reference to the service provider
+  }, 
   department: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Department', 
     required: true 
-  }, // Reference to the department
+  }, 
   doctor: {   
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Doctor', 
     required: true 
-  }, // Reference to the doctor being booked
+  },
   bookingDate: {
     type: Date,
     required: true,
@@ -83,7 +82,6 @@ const appointmentSchema: Schema<any & Document> = new Schema({
 
 });
 
-// Create the Appointment model
 const AppointmentModel: Model<any & Document> = mongoose.model('Appointment', appointmentSchema);
 
 export default AppointmentModel;

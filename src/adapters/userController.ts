@@ -382,6 +382,22 @@ class userController {
     }
   }
 
+  async confirmWalletPayment(req: Request, res: Response, next: NextFunction) {
+    try {
+      console.log("from the controller  ");
+      
+      console.log(req.body)
+      const { appointmentData } = req.body;
+      console.log("body ;",appointmentData);
+      
+      const Appointment = await this.userUseCase.confirmWalletPayment(appointmentData);
+
+      return res.status(200).json({Appointment});
+    } catch (error) {
+      next(error);
+    }
+  }
+
 
   async updateBookingStatus(req: Request, res: Response, next: NextFunction) {
     try {
@@ -425,6 +441,7 @@ class userController {
   }
 
 
+
   async getAllEmergencyNumbers(req: Request, res: Response, next: NextFunction) {
     try {
       
@@ -432,6 +449,35 @@ class userController {
       return res.status(200).json(result);
 
     } catch (error) {
+      next(error);
+    }
+  }
+
+  
+  async getWalletDetails (req:Request , res: Response , next: NextFunction) {
+    try{
+
+      const {id} = req.params;
+      console.log("came in controller :");
+      
+
+      const result = await this.userUseCase.getWalletDetails(id);
+      res.status(201).json(result);
+    }catch(error){
+      next(error);
+    }
+  }
+  
+  async isWalletHaveMoney (req:Request , res: Response , next: NextFunction) {
+    try{
+
+      const {id} = req.params;
+      console.log("came in controller :");
+      
+
+      const result = await this.userUseCase.isWalletHaveMoney(id);
+      res.status(201).json(result);
+    }catch(error){
       next(error);
     }
   }

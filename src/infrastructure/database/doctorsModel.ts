@@ -116,6 +116,10 @@ const doctorSchema: Schema<any & Document> = new Schema({
     type:String,
     required:true,
   },
+  isDeleted:{
+    type:Boolean,
+    default:false,
+  }
 });
 
 // Create the Doctor model

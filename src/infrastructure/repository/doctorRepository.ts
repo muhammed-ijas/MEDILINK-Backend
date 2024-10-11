@@ -5,7 +5,11 @@ class DoctorRepository {
   async findPaginated(page: number, limit: number, search: string) {
     try {
       return await DoctorModel.find({
-        name: new RegExp(search, 'i') // Case-insensitive search
+        name: new RegExp(search, 'i'), // Case-insensitive search
+        $or: [
+          { isDeleted: { $exists: false } }, // Doctors without the isDeleted field
+          { isDeleted: false }               // Doctors with isDeleted set to false
+        ]
       })
       .skip((page - 1) * limit)
       .limit(limit)
@@ -14,16 +18,22 @@ class DoctorRepository {
       throw error;
     }
   }
-
+  
   async count(search: string) {
     try {
       return await DoctorModel.countDocuments({
-        name: new RegExp(search, 'i')
+        name: new RegExp(search, 'i'), // Case-insensitive search
+        $or: [
+          { isDeleted: { $exists: false } }, // Doctors without the isDeleted field
+          { isDeleted: false }               // Doctors with isDeleted set to false
+        ]
       });
     } catch (error) {
-      throw error;
+        throw error;
     }
   }
+  
+  
 
   async findDoctorById(id: string) {
     try {

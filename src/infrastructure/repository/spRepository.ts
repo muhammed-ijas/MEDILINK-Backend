@@ -4,6 +4,7 @@ import SPRepo from "../../useCase/interface/spRepo";
 import SPOtp from "../../domain/SPOtp";
 import SPOtpModel from "../database/SPOtpModel";
 import DepartmentModel from "../database/departmentModel";
+import UserModel from "../database/userModel";
 import DoctorModel from "../database/doctorsModel";
 import mongoose, { Model, Schema, Document } from "mongoose";
 import moment from "moment";
@@ -883,8 +884,8 @@ class SPRepository implements SPRepo {
           },
         ],
         mode: "payment",
-        success_url: `http://localhost:5173/user/success?bookingId=${appointment._id}`,
-        cancel_url: "http://localhost:5173/user/cancel",
+        success_url: `http://medilink.vercel.app//user/success?bookingId=${appointment._id}`,
+        cancel_url: "http://medilink.vercel.app/user/cancel",
       });
 
       return session;
@@ -1010,12 +1011,52 @@ class SPRepository implements SPRepo {
   }
 
   async updateAppointmentStatus(id: string, status: string) {
-    return await AppointmentModel.findByIdAndUpdate(
-      id,
-      { bookingStatus: status },
-      { new: true } // This option returns the updated document
+    // Find the appointment to get the user ID
+    const appointment = await AppointmentModel.findById(id).select('user');
+    
+    if (!appointment) {
+        throw new Error('Appointment not found');
+    }
+
+    const userId = appointment.user; // Get the user ID from the appointment
+
+    // Update the appointment status
+    const updatedAppointment = await AppointmentModel.findByIdAndUpdate(
+        id,
+        { bookingStatus: status },
+        { new: true } // This option returns the updated document
     );
-  }
+
+    // If the appointment is cancelled, add 50 to the user's wallet
+    if (status === 'cancelled') {
+        const walletEntry = {
+            appointmentId: id,
+            date: new Date(), // current date
+            amount: 50, // refund amount
+            isPlus:true,
+        };
+
+        // Check if the user already has a wallet
+        const userWallet = await UserModel.findOne({ _id: userId }).select('wallet');
+
+        if (userWallet) {
+            // User has a wallet, add the new wallet entry
+            await UserModel.updateOne(
+                { _id: userId },
+                { $push: { wallet: walletEntry } } // Push the new wallet entry
+            );
+        } else {
+            // User does not have a wallet, create a new one
+            await UserModel.updateOne(
+                { _id: userId },
+                { $set: { wallet: [walletEntry] } } // Create a new wallet with the entry
+            );
+        }
+    }
+
+    return updatedAppointment;
+}
+
 
   async updateTimeSlotStatus(
     doctorId: string,
@@ -1376,6 +1417,7 @@ class SPRepository implements SPRepo {
     }
   }
 
+
   async deleteDoctor(doctorId: string) {
     try {
       // find the doctor
@@ -1430,7 +1472,7 @@ class SPRepository implements SPRepo {
 
   
       // Step 5: Delete the doctor
-      await DoctorModel.findByIdAndDelete(doctorId); // Finally, delete the doctor
+      await DoctorModel.findByIdAndUpdate(doctorId, { isDeleted: true });
   
       // Step 6: Send cancellation emails
       const emailService = new sendOtp(); // Create an instance of your email service
@@ -1446,6 +1488,126 @@ class SPRepository implements SPRepo {
       throw error;
     }
   }
+
+  async confirmWalletPayment(data: any) {
+    // Validate required fields
+    if (
+      !data.userInfo ||
+      !data.doctorId ||
+      !data.bookingDate ||
+      !data.timeSlot ||
+      !data.patientName ||
+      !data.patientAge ||
+      !data.patientEmail ||
+      !data.patientPhone ||
+      !data.amount
+    ) {
+      throw new Error("Missing required fields");
+    }
+  
+    try {
+
+
+      console.log("data came in repository :",data);
+      
+      // Fetch the doctor based on doctorId
+      const doctor = await DoctorModel.findById(data.doctorId).exec();
+      if (!doctor) throw new Error("Doctor not found");
+  
+      // Fetch the department based on doctor.department
+      const department = await DepartmentModel.findById(doctor.department).exec();
+      if (!department) throw new Error("Department not found");
+  
+      // Fetch the service provider based on department.serviceProvider
+      const serviceProvider = await SPModel.findById(department.serviceProvider).exec();
+      if (!serviceProvider) throw new Error("Service Provider not found");
+  
+      // Create a new appointment with status "pending"
+      const appointment = new AppointmentModel({
+        user: data.userInfo._id,
+        serviceProvider: serviceProvider._id,
+        department: department._id,
+        doctor: doctor._id,
+        bookingDate: new Date(data.bookingDate),
+        timeSlot: data.timeSlot,
+        patientName: data.patientName,
+        patientAge: data.patientAge,
+        patientEmail: data.patientEmail,
+        patientPhone: data.patientPhone,
+        amount: 50,
+        paymentStatus: "completed", // Change status to confirmed
+      });
+  
+      await appointment.save(); // Save the appointment
+  
+      // Update the user's wallet
+      const user = await UserModel.findById(data.userInfo._id).exec();
+      if (!user) throw new Error("User not found");
+  
+      // Deduct amount from wallet
+      user.wallet.push({
+        appointmentId: appointment._id,
+        date: new Date(), // Current date
+        amount: 50, // Use the amount passed from data
+        isPlus: false, // Mark as a deduction
+      });
+  
+      await user.save(); // Save the updated user
+  
+      // Update doctor's availability
+      const availableDate = doctor.availableDates.find(
+        (date: AvailableDate) =>
+          date.date.toISOString().split("T")[0] ===
+          appointment.bookingDate.toISOString().split("T")[0]
+      );
+  
+      if (!availableDate) throw new Error("No available date found");
+  
+      const timeSlot = availableDate?.timeSlots.find(
+        (slot: TimeSlot) => slot.slot === appointment.timeSlot
+      );
+
+      if (!timeSlot) throw new Error("No matching time slot found");
+  
+      if (timeSlot.status === "not occupied") {
+        timeSlot.status = "occupied";
+        timeSlot.user = appointment.user;
+      }
+  
+      await doctor.save(); // Save updated doctor's availability
+  
+      // Generate QR code for appointment details
+      const qrCodeContent = `
+        MEDILINK Appointment
+        
+        Service Provider: ${serviceProvider.name}
+        Department: ${department.name}
+        Doctor: ${doctor.name}
+        
+        Appointment Date: ${appointment.bookingDate.toLocaleDateString()}
+        Time Slot: ${appointment.timeSlot}
+        
+        Patient Details:
+          Name: ${appointment.patientName}
+          Age: ${appointment.patientAge}
+          Email: ${appointment.patientEmail}
+          Phone: ${appointment.patientPhone}
+        
+        Booking ID: ${appointment._id}
+      `.trim();
+  
+      const qrCodeData = await QRCode.toDataURL(qrCodeContent);
+      appointment.qrCode = qrCodeData; // Save QR code in appointment
+      await appointment.save(); // Save appointment with QR code
+  
+      return { message: "Appointment created successfully", appointmentId: appointment._id, qrCode: qrCodeData };
+    } catch (error) {
+      console.error('Error in confirmWalletPayment:', error);
+      throw new Error("An error occurred while confirming the wallet payment");
+    }
+  }
+  
+
   
   
 

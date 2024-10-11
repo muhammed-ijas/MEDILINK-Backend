@@ -107,6 +107,20 @@ const spSchema: Schema<any & Document> = new Schema({
     type:String
   },
   ratings: [ratingSchema], //for ratings 
+  wallet: [
+    {
+      appointmentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Appointment",
+      },
+      date: {
+        type: Date,
+      },
+      amount: {
+        type: Number,
+      },
+    },
+  ],
 });
 
 const SPModel: Model<SP & Document> = mongoose.model<SP & Document>(

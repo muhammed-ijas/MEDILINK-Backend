@@ -1,3 +1,12 @@
+interface WalletEntry {
+    appointmentId: string; 
+    date: Date;
+    amount: number;
+    isPlus: boolean;
+}
+
+
+
 interface User{
     _id:string,
     name:string,
@@ -7,6 +16,8 @@ interface User{
     isBlocked:boolean,
     fromGoogle:boolean,
     isAdmin:boolean,
+    wallet: WalletEntry[];  
+
 };
 
 export default User;

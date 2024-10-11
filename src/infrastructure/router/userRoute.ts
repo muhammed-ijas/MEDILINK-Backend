@@ -67,7 +67,6 @@ route.get('/getDoctorDetailsFromSearchPage/:id', userAuth, (req, res, next) => u
 route.get('/getHomeNurseDetails/:id', userAuth, (req, res, next) => userController.getHomeNurseDetails(req, res, next));
 route.get('/getAmbulanceDetails/:id', userAuth, (req, res, next) => userController.getAmbulanceDetails(req, res, next));
 
-route.post('/createPaymentSession', userAuth, (req, res, next) => {userController.createPaymentSession(req, res, next);});
 
 route.post('/updateBookingStatus', userAuth, (req, res,next) => { userController.updateBookingStatus(req, res ,next);});
 
@@ -79,6 +78,15 @@ route.post('/addReview/:id', (req, res, next) => userController.addReview(req, r
 
 route.get('/getEmergencyNumbers', (req, res, next) => userController.getAllEmergencyNumbers(req, res, next));
 
+route.get('/getWalletDetails/:id', (req, res, next) => userController.getWalletDetails(req, res, next));
+
+
+route.get('/isWalletHaveMoney/:id', (req, res, next) => userController.isWalletHaveMoney(req, res, next));
+
+
+route.post('/createPaymentSession', userAuth, (req, res, next) => {userController.createPaymentSession(req, res, next);});
+
+route.post('/confirmWalletPayment', userAuth, (req, res, next) => {userController.confirmWalletPayment(req, res, next);});
 
 
 

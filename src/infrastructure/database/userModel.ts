@@ -29,7 +29,24 @@ const useSchema:Schema = new Schema<User | Document>(
         isAdmin:{
             type:Boolean,
             default:false
-        }
+        },
+        wallet: [
+            {
+              appointmentId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Appointment", // Assuming you have an Appointment model
+              },
+              date: {
+                type: Date,
+              },
+              amount: {
+                type: Number,
+              },
+              isPlus:{
+                type:Boolean,
+              }
+            },
+          ],
     }
 )
 

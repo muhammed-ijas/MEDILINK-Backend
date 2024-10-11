@@ -107,8 +107,6 @@ class UserRepository implements UserRepo {
     }
   }
 
-
-
   async addReview(appointmentId: string, rating: number, review: string) {
     try {
       // Find the appointment and populate relevant fields
@@ -116,29 +114,29 @@ class UserRepository implements UserRepo {
         .populate("serviceProvider")
         .populate("doctor")
         .populate("user");
-  
+
       // Check if the appointment exists and is completed
       if (!appointment || appointment.bookingStatus !== "completed") {
         throw new Error("Appointment must be completed to add a review.");
       }
-  
+
       const userId = appointment.user._id;
-  
+
       // Create the new review object
       const newReview = {
-        userId, 
+        userId,
         rating,
         review,
         createdAt: new Date(),
       };
-  
+
       // Check if the service provider exists
       if (appointment.serviceProvider) {
         const existingReview = await SPModel.findOne({
           _id: appointment.serviceProvider._id,
-          "ratings.userId": userId,  // Check if the user already has a review
+          "ratings.userId": userId, // Check if the user already has a review
         });
-  
+
         if (existingReview) {
           // If the review exists, update it
           await SPModel.updateOne(
@@ -158,14 +156,14 @@ class UserRepository implements UserRepo {
           });
         }
       }
-  
+
       // Repeat the same logic for doctors
       if (appointment.doctor) {
         const existingDoctorReview = await DoctorModel.findOne({
           _id: appointment.doctor._id,
-          "ratings.userId": userId,  // Check if the user already has a review
+          "ratings.userId": userId, // Check if the user already has a review
         });
-  
+
         if (existingDoctorReview) {
           // If the review exists, update it
           await DoctorModel.updateOne(
@@ -185,28 +183,111 @@ class UserRepository implements UserRepo {
           });
         }
       }
-  
-      return { message: "Review added or updated successfully!", review: newReview };
+
+      return {
+        message: "Review added or updated successfully!",
+        review: newReview,
+      };
     } catch (error) {
       throw new Error(`Error adding review: ${error}`);
     }
   }
 
-
-  
-  
   async findAllEmergencyNumber() {
     try {
-      const EmergencyNumbers = await EmergencyModel.find({})
-        .populate("serviceProvider", "name profileImage");
+      const EmergencyNumbers = await EmergencyModel.find({}).populate(
+        "serviceProvider",
+        "name profileImage"
+      );
       return EmergencyNumbers;
-
     } catch (error) {
       throw error;
     }
   }
+
+  async getWalletDetails(userId: string) {
+    try {
+      // Step 1: Find the user and get the wallet details
+      const walletDetails = await UserModel.findOne({ _id: userId })
+        .populate({
+          path: "wallet.appointmentId", // Populate the appointmentId in the wallet array
+          model: "Appointment", // Specify the Appointment model
+          populate: [
+            {
+              path: "serviceProvider", // Populate the serviceProvider field
+              select: "name profileImage", // Select only the necessary fields
+            },
+            {
+              path: "department", // Populate the department field
+              select: "name", // Select only the name field
+            },
+            {
+              path: "doctor", // Populate the doctor field
+              select: "name", // Select only the name field
+            },
+          ],
+        })
+        .select("wallet");
+
+      if (walletDetails && walletDetails.wallet) {
+        walletDetails.wallet.sort((a, b) => {
+          const dateA = new Date(a.date).getTime();
+          const dateB = new Date(b.date).getTime();
+          return dateB - dateA; // Sort in descending order
+        });
+      }
+
+      // Return the wallet details
+      return walletDetails ? walletDetails.wallet : []; // Return an empty array if no wallet details found
+    } catch (error) {
+      throw error;
+    }
+  }
+
+
   
-  
+async isWalletHaveMoney(userId: string) {
+  try {
+    // Fetch user by userId
+    const user = await UserModel.findById(userId);
+
+    console.log("user :",user);
+    
+
+    // Check if the user exists
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Initialize a variable to calculate the total balance
+    let totalBalance = 0;
+
+    // Iterate through each wallet entry to calculate the balance
+    user.wallet.forEach((transaction) => {
+      if (transaction.isPlus) {
+        totalBalance += transaction.amount;  // Add amount if isPlus is true
+      } else {
+        totalBalance -= transaction.amount;  // Subtract amount if isPlus is false
+      }
+    });
+
+    // Check if the total balance is 50 or more
+    if (totalBalance >= 50) {
+      return {
+        hasEnoughMoney: true,
+        balance: totalBalance
+      };
+    } else {
+      return {
+        hasEnoughMoney: false,
+        balance: totalBalance
+      };
+    }
+  } catch (error) {
+    console.error("Error checking wallet balance:", error);
+    throw error;
+  }
+}
 }
 
 export default UserRepository;
