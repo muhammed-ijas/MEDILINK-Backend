@@ -1,5 +1,5 @@
 import { httpServer } from "./infrastructure/config/app";
-import { connectDB } from "./infrastructure/config/connectDB";
+import { connectDB } from "./infrastructure/config/connect-DB";
 import { Server as SocketIOServer } from "socket.io";
 
 const PORT = process.env.PORT;

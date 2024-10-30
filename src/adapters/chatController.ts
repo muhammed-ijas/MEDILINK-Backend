@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import ChatUseCase from "../useCase/chatUsecase";
+import ChatUseCase from "../useCase/chat-usecase";
 
 export default class ChatController {
   private chatUseCase: ChatUseCase;
@@ -36,12 +36,9 @@ export default class ChatController {
     }
   }
 
-  // Handle retrieving messages between two users
-
   async getMessages(req: Request, res: Response, next: NextFunction) {
     const senderId = req.body.userId;
     const receiverId = req.body.providerId;
-
     try {
       const messages = await this.chatUseCase.getMessages(senderId, receiverId);
 
@@ -65,7 +62,6 @@ export default class ChatController {
     const senderId = req.body.providerId;
     const receiverId = req.body.userId;
     const message = req.body.message;
-
     try {
       const newMessage = await this.chatUseCase.SPsendMessage(
         senderId,
@@ -77,7 +73,6 @@ export default class ChatController {
       next(error);
     }
   }
-
   // Handle retrieving messages between two users
 
   async SPgetMessages(req: Request, res: Response, next: NextFunction) {

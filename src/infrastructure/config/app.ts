@@ -12,10 +12,10 @@ import cors from 'cors'
 
 
 //Routes root
-import userRoute from '../router/userRoute'
-import spRoute from '../router/spRoute'
-import adminRoute from '../router/adminRoute'
-import chatRoute from '../router/chatRoute'
+import userRoute from '../router/user-route'
+import spRoute from '../router/service-provider-route'
+import adminRoute from '../router/admin-route'
+import chatRoute from '../router/chat-route'
 
 
 const app = express();
