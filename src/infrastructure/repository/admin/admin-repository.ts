@@ -2,7 +2,6 @@ import UserModel from "../../database/user-model";
 import SPModel from "../../database/service-provider-model";
 
 class adminRepository {
- 
 
   async getUnVerifiedServices(): Promise<{ services: any[] }> {
     const services = await SPModel.find({ isVerified: false }).lean();
@@ -23,7 +22,7 @@ class adminRepository {
     return { services };
   }
 
-
+ 
   async getVerifiedServices(): Promise<{ services: any[] }> {
     const services = await SPModel.find({isVerified:true})
       .populate({

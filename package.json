@@ -12,6 +12,7 @@
   "description": "",
   "dependencies": {
     "aws-sdk": "^2.1682.0",
+    "backend": "file:",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.4.0",
