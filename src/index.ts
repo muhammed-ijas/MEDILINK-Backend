@@ -2,7 +2,7 @@ import { httpServer } from "./infrastructure/config/app";
 import { connectDB } from "./infrastructure/config/connect-DB";
 import { Server as SocketIOServer } from "socket.io";
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000 ;
 
 const startServer = async (): Promise<void> => {
   await connectDB();
