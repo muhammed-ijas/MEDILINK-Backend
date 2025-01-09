@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon src/index.ts",
+    "start": "cross-env NODE_OPTIONS='--max-old-space-size=1024' nodemon src/index.ts",
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -40,6 +41,7 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/nodemailer": "^6.4.15",
     "@types/qrcode": "^1.5.5",
+    "cross-env": "^7.0.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   }

@@ -30,6 +30,8 @@ class userController {
 
   async getHospitals(req: Request, res: Response, next: NextFunction) {
     try {
+      console.log("request came to controller ");
+      
       const { page = 1, limit = 10, search = "" } = req.query;
       const result = await this.userUseCase.getHospitals(Number(page),Number(limit),search as string);
       return res.status(200).json(result);
